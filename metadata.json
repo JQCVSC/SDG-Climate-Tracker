@@ -1,0 +1,6 @@
+{
+  "name": "SDG 13 Climate Action Pledge Tracker",
+  "description": "Python Flask web application for tracking SDG 13 Climate Action Pledges with interactive Google Maps & Google Air Quality API integration, designed for Cloud Run and Firestore deployment.",
+  "requestFramePermissions": ["geolocation"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

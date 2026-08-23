@@ -1,0 +1,1587 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SDG 13: Climate Action Pledge Tracker & Global Air Quality Map</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        teal: {
+                            brand: '#1B5D77',
+                            dark: '#14475B',
+                            light: '#E9F2F5',
+                            soft: '#D4E7ED'
+                        },
+                        coral: {
+                            brand: '#DE6738',
+                            dark: '#C8572A',
+                            light: '#FDF3EE',
+                            soft: '#FBE7DE'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        #map {
+            width: 100%;
+            height: 380px;
+            border-radius: 0.75rem;
+        }
+        .pac-container {
+            z-index: 10000;
+            border-radius: 0.5rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            font-family: inherit;
+        }
+    </style>
+</head>
+<body class="bg-stone-50 text-stone-800 min-h-screen flex flex-col font-sans antialiased">
+
+    <!-- Top Navigation Header with Google Cloud & Mentor Me Collective Branding -->
+    <header class="bg-gradient-to-r from-[#DE6738] via-[#DE6738] to-[#CD582B] text-white shadow-md border-b-4 border-[#1B5D77]">
+        <div class="max-w-6xl mx-auto px-4 py-4 space-y-3">
+            <div class="flex flex-col md:flex-row items-center justify-between gap-4">
+                
+                <!-- Left Title -->
+                <div class="flex items-center space-x-3 text-center sm:text-left">
+                    <div>
+                        <h1 class="text-xl font-bold tracking-tight text-white drop-shadow-xs">SDG 13: Climate Action Pledge Tracker</h1>
+                        <p class="text-xs text-amber-100 font-medium">Global Air Quality Explorer &bull; Google Maps &bull; Cloud Run &bull; Firestore</p>
+                    </div>
+                </div>
+
+                <!-- Right: Mentor Me Collective Logo Badge -->
+                <div class="flex items-center shadow-md rounded-full overflow-hidden border border-white/50 bg-white px-3.5 py-1.5 sm:px-4 sm:py-2">
+                    <img 
+                        src="https://storage.googleapis.com/sites_imagex/MentorMeLogo.png" 
+                        alt="Mentor Me Collective" 
+                        class="h-8 sm:h-10 w-auto object-contain"
+                        referrerpolicy="no-referrer"
+                    />
+                </div>
+
+            </div>
+
+            <!-- Subheader status pill -->
+            <div class="space-y-1.5 pt-1 border-t border-white/15">
+                <div class="flex flex-wrap items-center justify-between gap-2 text-xs">
+                    <div class="flex items-center gap-2 text-amber-100 text-[11px]">
+                        <span class="inline-block w-2 h-2 rounded-full bg-[#ECC247] animate-pulse"></span>
+                        <span>Live Google Maps JavaScript &bull; Google Air Quality API &bull; Google Gemini AI &bull; Firestore /pledges</span>
+                    </div>
+                    <span class="px-2.5 py-0.5 bg-[#1B5D77]/80 text-white rounded-full text-[10px] font-semibold tracking-wide uppercase border border-white/20 inline-flex items-center gap-1.5">
+                        <svg class="w-3 h-3 text-amber-300" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z"/>
+                        </svg>
+                        <span>Gemini-Powered Climate Action</span>
+                    </span>
+                </div>
+                <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-1 text-[10.5px] text-sky-100/90 pt-1 border-t border-white/10">
+                    <p>Community Air Quality Explorer &bull; Google Gemini AI Advisories &bull; Google Cloud Run &bull; Firestore NoSQL</p>
+                    <p>Managed with GCP Console &bull; Google Maps JavaScript API &bull; Google Air Quality API &bull; Google Gemini</p>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="max-w-6xl mx-auto px-4 py-8 flex-1 w-full space-y-8">
+
+        <!-- Interactive Global Air Quality Map Section -->
+        <section class="bg-white rounded-xl border border-stone-200 p-5 shadow-sm space-y-4">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-3 border-b border-stone-100">
+                <div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs font-semibold uppercase tracking-wider text-[#1B5D77] bg-[#E9F2F5] px-2 py-0.5 rounded border border-[#D4E7ED]">
+                            Interactive Map
+                        </span>
+                        <h2 class="text-base font-bold text-stone-900">Explore World Air Quality</h2>
+                    </div>
+                    <p class="text-xs text-stone-500 mt-0.5">
+                        Click anywhere on the globe or search a city to fetch real-time Google Air Quality API readings.
+                    </p>
+                </div>
+
+                <!-- Search and Geolocation Controls -->
+                <div class="flex flex-wrap items-center gap-2">
+                    <form onsubmit="handleManualSearch(event)" class="relative flex items-center min-w-[280px]">
+                        <input 
+                            id="map-search-input" 
+                            type="text" 
+                            placeholder="Search continent, country or city (e.g. Africa, Europe, Ghana, Berlin)..." 
+                            class="w-full pl-8 pr-16 py-1.5 bg-stone-50 border border-stone-300 rounded-lg text-xs focus:ring-2 focus:ring-[#1B5D77] focus:bg-white focus:outline-none"
+                        />
+                        <svg class="w-3.5 h-3.5 text-stone-400 absolute left-2.5 top-2.5 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                        </svg>
+                        <button 
+                            type="submit" 
+                            class="absolute right-1.5 px-2 py-1 bg-[#1B5D77] hover:bg-[#14475B] text-white rounded text-[11px] font-medium transition cursor-pointer"
+                        >
+                            Search
+                        </button>
+                    </form>
+                    <button 
+                        id="btn-geolocate"
+                        type="button" 
+                        class="px-3 py-1.5 bg-stone-100 hover:bg-stone-200 text-stone-700 border border-stone-300 rounded-lg text-xs font-medium flex items-center gap-1.5 transition cursor-pointer"
+                    >
+                        <svg class="w-3.5 h-3.5 text-[#1B5D77]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                        </svg>
+                        <span>My Location</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Quick Presets: Continents & Cities -->
+            <div class="space-y-1.5 pt-1">
+                <!-- Continents -->
+                <div class="flex flex-wrap items-center gap-1.5 text-xs text-stone-600">
+                    <span class="text-[#1B5D77] font-semibold text-[11px] flex items-center gap-1">
+                        <svg class="w-3.5 h-3.5 text-[#1B5D77]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <circle cx="12" cy="12" r="10" stroke-width="2"></circle>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2 12h20M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"></path>
+                        </svg> Continents:
+                    </span>
+                    <button type="button" onclick="jumpToLocation(1.6508, 17.6879, 'Africa', 3)" class="px-2 py-0.5 bg-[#E9F2F5] hover:bg-[#D4E7ED] text-[#1B5D77] rounded border border-[#D4E7ED] text-[11px] font-medium cursor-pointer">Africa</button>
+                    <button type="button" onclick="jumpToLocation(34.0479, 100.6197, 'Asia', 3)" class="px-2 py-0.5 bg-[#E9F2F5] hover:bg-[#D4E7ED] text-[#1B5D77] rounded border border-[#D4E7ED] text-[11px] font-medium cursor-pointer">Asia</button>
+                    <button type="button" onclick="jumpToLocation(54.5260, 15.2551, 'Europe', 3)" class="px-2 py-0.5 bg-[#E9F2F5] hover:bg-[#D4E7ED] text-[#1B5D77] rounded border border-[#D4E7ED] text-[11px] font-medium cursor-pointer">Europe</button>
+                    <button type="button" onclick="jumpToLocation(54.5260, -105.2551, 'North America', 3)" class="px-2 py-0.5 bg-[#E9F2F5] hover:bg-[#D4E7ED] text-[#1B5D77] rounded border border-[#D4E7ED] text-[11px] font-medium cursor-pointer">North America</button>
+                    <button type="button" onclick="jumpToLocation(-8.7832, -55.4915, 'South America', 3)" class="px-2 py-0.5 bg-[#E9F2F5] hover:bg-[#D4E7ED] text-[#1B5D77] rounded border border-[#D4E7ED] text-[11px] font-medium cursor-pointer">South America</button>
+                    <button type="button" onclick="jumpToLocation(-22.7359, 140.0188, 'Oceania', 3)" class="px-2 py-0.5 bg-[#E9F2F5] hover:bg-[#D4E7ED] text-[#1B5D77] rounded border border-[#D4E7ED] text-[11px] font-medium cursor-pointer">Oceania</button>
+                </div>
+
+                <!-- Cities -->
+                <div class="flex flex-wrap items-center gap-1.5 text-xs text-stone-600">
+                    <span class="text-stone-400 font-medium text-[11px]">Popular Cities:</span>
+                    <button type="button" onclick="jumpToLocation(37.7749, -122.4194, 'San Francisco, USA', 11)" class="px-2 py-0.5 bg-stone-100 hover:bg-[#FDF3EE] hover:text-[#DE6738] rounded border border-stone-200 text-[11px] cursor-pointer">San Francisco</button>
+                    <button type="button" onclick="jumpToLocation(51.5074, -0.1278, 'London, UK', 11)" class="px-2 py-0.5 bg-stone-100 hover:bg-[#FDF3EE] hover:text-[#DE6738] rounded border border-stone-200 text-[11px] cursor-pointer">London</button>
+                    <button type="button" onclick="jumpToLocation(35.6762, 139.6503, 'Tokyo, Japan', 11)" class="px-2 py-0.5 bg-stone-100 hover:bg-[#FDF3EE] hover:text-[#DE6738] rounded border border-stone-200 text-[11px] cursor-pointer">Tokyo</button>
+                    <button type="button" onclick="jumpToLocation(28.6139, 77.2090, 'New Delhi, India', 11)" class="px-2 py-0.5 bg-stone-100 hover:bg-[#FDF3EE] hover:text-[#DE6738] rounded border border-stone-200 text-[11px] cursor-pointer">New Delhi</button>
+                    <button type="button" onclick="jumpToLocation(-23.5505, -46.6333, 'São Paulo, Brazil', 11)" class="px-2 py-0.5 bg-stone-100 hover:bg-[#FDF3EE] hover:text-[#DE6738] rounded border border-stone-200 text-[11px] cursor-pointer">São Paulo</button>
+                    <button type="button" onclick="jumpToLocation(-1.2921, 36.8219, 'Nairobi, Kenya', 11)" class="px-2 py-0.5 bg-stone-100 hover:bg-[#FDF3EE] hover:text-[#DE6738] rounded border border-stone-200 text-[11px] cursor-pointer">Nairobi</button>
+                    <button type="button" onclick="jumpToLocation(48.8566, 2.3522, 'Paris, France', 11)" class="px-2 py-0.5 bg-stone-100 hover:bg-[#FDF3EE] hover:text-[#DE6738] rounded border border-stone-200 text-[11px] cursor-pointer">Paris</button>
+                </div>
+            </div>
+
+            <!-- The Google Map Canvas -->
+            <div class="relative overflow-hidden rounded-xl border border-stone-200">
+                <div id="map"></div>
+
+                <!-- Floating Live Inspector Badge on Map -->
+                <div id="map-live-badge" class="absolute top-3 left-3 bg-white/95 backdrop-blur-sm border border-stone-200 p-3 rounded-lg shadow-md max-w-xs text-xs z-10">
+                    <div class="flex items-center justify-between gap-2 pb-1.5 border-b border-stone-100">
+                        <span id="badge-location-name" class="font-bold text-stone-900 truncate">{{ aqi.location_name }}</span>
+                        <span id="badge-aqi-pill" class="px-2 py-0.5 rounded-full text-[10px] font-bold 
+                            {% if aqi.category == 'Good' %} bg-emerald-100 text-emerald-800
+                            {% elif aqi.category == 'Moderate' %} bg-amber-100 text-amber-800
+                            {% else %} bg-rose-100 text-rose-800 {% endif %}">
+                            AQI: <span id="badge-aqi-val">{{ aqi.aqi }}</span>
+                        </span>
+                    </div>
+                    <p id="badge-recommendation" class="text-[11px] text-stone-600 mt-1.5 leading-snug">
+                        {{ aqi.health_recommendation }}
+                    </p>
+                    <div class="mt-2 pt-1.5 border-t border-stone-100 flex items-center justify-between text-[10px] text-stone-400">
+                        <span>Dominant: <strong id="badge-pollutant" class="text-stone-700">{{ aqi.dominant_pollutant }}</strong></span>
+                        <span id="badge-status-loading" class="hidden text-emerald-600 font-medium">Fetching AQI...</span>
+                    </div>
+                </div>
+
+                <!-- Floating Zoom Controls -->
+                <div class="absolute bottom-4 right-4 flex flex-col bg-white border border-stone-300 rounded-lg shadow-md overflow-hidden z-10">
+                    <button type="button" onclick="zoomIn()" title="Zoom In" aria-label="Zoom In" class="w-8 h-8 flex items-center justify-center text-stone-700 hover:bg-stone-100 hover:text-emerald-700 border-b border-stone-200 font-bold text-base transition cursor-pointer">
+                        +
+                    </button>
+                    <button type="button" onclick="zoomOut()" title="Zoom Out" aria-label="Zoom Out" class="w-8 h-8 flex items-center justify-center text-stone-700 hover:bg-stone-100 hover:text-emerald-700 font-bold text-base transition cursor-pointer">
+                        &minus;
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Top Air Quality & SDG Metrics Bar -->
+        <section class="grid grid-cols-1 md:grid-cols-3 gap-5">
+            
+            <!-- Google Air Quality API Summary Card -->
+            <div class="md:col-span-2 bg-white rounded-xl border border-stone-200 p-5 shadow-sm flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center justify-between pb-3 border-b border-stone-100">
+                        <div class="flex items-center space-x-2">
+                            <span class="text-xs font-semibold uppercase tracking-wider text-[#1B5D77] bg-[#E9F2F5] px-2 py-0.5 rounded border border-[#D4E7ED]">
+                                Google Air Quality API
+                            </span>
+                            <span id="summary-location-label" class="text-xs text-stone-500">{{ aqi.location_name }}</span>
+                        </div>
+                        <span id="summary-live-tag" class="text-xs font-medium text-[#1B5D77] flex items-center gap-1">
+                            <span class="w-2 h-2 rounded-full bg-[#DE6738] animate-pulse"></span> Google Air Quality API Ready
+                        </span>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 my-4 items-center">
+                        <div class="flex items-baseline space-x-2">
+                            <span id="summary-aqi-num" class="text-4xl font-extrabold text-stone-900">{{ aqi.aqi }}</span>
+                            <span class="text-xs font-medium text-stone-500 uppercase">AQI Index</span>
+                        </div>
+                        <div class="sm:col-span-2">
+                            <div id="summary-category-pill" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold
+                                {% if aqi.category == 'Good' %} bg-emerald-100 text-emerald-800
+                                {% elif aqi.category == 'Moderate' %} bg-amber-100 text-amber-800
+                                {% else %} bg-rose-100 text-rose-800 {% endif %}">
+                                Status: <span id="summary-category-text">{{ aqi.category }}</span> (<span id="summary-pollutant-text">{{ aqi.dominant_pollutant }}</span>)
+                            </div>
+                            <p id="summary-rec-text" class="text-xs text-stone-600 mt-1 leading-relaxed">{{ aqi.health_recommendation }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Coordinate Filter Form -->
+                <div class="pt-3 border-t border-stone-100 flex flex-wrap items-center gap-2 text-xs">
+                    <span class="text-stone-500 font-medium">Selected Coordinates:</span>
+                    <input type="number" step="0.0001" id="input-lat" value="{{ current_lat }}" placeholder="Lat" class="w-24 px-2 py-1 bg-stone-50 border border-stone-200 rounded text-stone-700 text-xs focus:ring-1 focus:ring-[#1B5D77] focus:outline-none">
+                    <input type="number" step="0.0001" id="input-lng" value="{{ current_lng }}" placeholder="Lng" class="w-24 px-2 py-1 bg-stone-50 border border-stone-200 rounded text-stone-700 text-xs focus:ring-1 focus:ring-[#1B5D77] focus:outline-none">
+                    <button type="button" onclick="updateFromInputs()" class="px-3 py-1 bg-stone-800 hover:bg-stone-900 text-white rounded font-medium transition cursor-pointer">
+                        Update Pin
+                    </button>
+                    <span id="summary-status-msg" class="text-[11px] text-stone-400 ml-auto">{{ aqi.status_message }}</span>
+                </div>
+            </div>
+
+            <!-- GCP Infrastructure & Tracker Summary Card -->
+            <div class="bg-[#DE6738] text-white rounded-xl p-5 shadow-sm flex flex-col justify-between border border-[#DE6738]/30">
+                <div>
+                    <div class="flex items-center justify-between">
+                        <h2 class="text-xs font-semibold uppercase tracking-wider text-amber-100">GCP Cloud Infrastructure</h2>
+                        <span class="text-[10px] bg-black/20 px-2 py-0.5 rounded text-white border border-white/20">Firestore</span>
+                    </div>
+                    
+                    <div class="mt-3 space-y-2">
+                        <div class="bg-black/20 p-2.5 rounded-lg border border-white/15 text-xs">
+                            <span class="text-amber-100/90 block text-[11px]">Database Layer:</span>
+                            <span class="font-semibold text-white">{{ db_status }}</span>
+                        </div>
+
+                        <div class="flex items-center justify-between pt-1">
+                            <div>
+                                <p class="text-2xl font-bold">{{ total_pledges }}</p>
+                                <p class="text-[11px] text-amber-100">Documents Stored</p>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-xl font-semibold text-[#FDF3EE]">{{ high_impact_pledges }}</p>
+                                <p class="text-[11px] text-amber-200">High-Impact</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="pt-3 border-t border-white/20 text-[11px] text-amber-100 leading-snug">
+                    All records are persisted in Firestore Collection: <code class="bg-black/30 px-1 py-0.5 rounded font-mono text-white">/pledges</code> in your GCP project.
+                </div>
+            </div>
+        </section>
+
+        <!-- Dynamic Live AQI Advisory Card Powered by Gemini 3.7 Flash -->
+        <section id="ai-climate-advisory-card" class="rounded-xl border p-5 sm:p-6 shadow-sm transition-all duration-300 {% if aqi.category == 'Moderate' %}border-amber-300 bg-gradient-to-br from-amber-50/95 via-orange-50/40 to-white text-amber-950{% elif aqi.category and 'Unhealthy' in aqi.category %}border-rose-300 bg-gradient-to-br from-rose-50/95 via-orange-50/50 to-white text-rose-950{% else %}border-emerald-300 bg-gradient-to-br from-emerald-50/95 via-teal-50/50 to-white text-emerald-950{% endif %}">
+            
+            <!-- Top Control & Status Row -->
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-black/10">
+                <div class="flex items-center space-x-2 flex-wrap gap-y-1.5">
+                    <span id="advisory-badge" class="px-2.5 py-0.5 rounded-full text-xs font-bold border uppercase tracking-wider {% if aqi.category == 'Moderate' %}bg-amber-100 text-amber-800 border-amber-300{% elif aqi.category and 'Unhealthy' in aqi.category %}bg-rose-100 text-rose-800 border-rose-300{% else %}bg-emerald-100 text-emerald-800 border-emerald-300{% endif %}">
+                        {% if aqi.category == 'Moderate' %}Moderate Air Quality{% elif aqi.category and 'Unhealthy' in aqi.category %}High Pollution Alert{% else %}Optimal Clean Air Day{% endif %}
+                    </span>
+                    <div class="flex items-center gap-1.5 px-3 py-1 bg-[#1B5D77] text-white rounded-full text-xs font-semibold shadow-xs">
+                        <span class="w-2 h-2 rounded-full bg-[#ECC247] animate-pulse"></span>
+                        <span>Gemini 3.7 Flash AI Insights</span>
+                    </div>
+                    <span class="text-xs font-medium text-stone-600">
+                        for <strong id="advisory-location-label">{{ aqi.location_name }}</strong>
+                    </span>
+                </div>
+                
+                <div class="flex items-center gap-2 text-xs">
+                    <span class="font-mono bg-white/95 px-3 py-1 rounded-md border border-black/10 font-bold text-stone-900 shadow-2xs">
+                        AQI: <span id="advisory-aqi-val" class="text-[#DE6738]">{{ aqi.aqi }}</span> (<span id="advisory-aqi-cat">{{ aqi.category }}</span>)
+                    </span>
+                    <button type="button" onclick="fetchLocationAQI(parseFloat(document.getElementById('input-lat').value) || 37.7749, parseFloat(document.getElementById('input-lng').value) || -122.4194)" class="px-2.5 py-1 rounded-md bg-white hover:bg-stone-100 text-[#1B5D77] border border-black/10 transition cursor-pointer flex items-center gap-1 text-xs font-semibold shadow-2xs">
+                        <span>&#x21bb; Refresh AI</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Headline -->
+            <div class="mt-4 mb-3">
+                <div class="flex flex-wrap items-center justify-between gap-2 text-xs font-bold text-[#1B5D77] mb-1.5">
+                    <div class="flex items-center gap-1.5">
+                        <span class="text-[#DE6738]">&#9881;</span>
+                        <span class="uppercase tracking-wider text-[11px]">Real-Time AI Atmospheric Assessment</span>
+                    </div>
+                    <span id="advisory-source-text" class="text-[11px] font-medium text-stone-600 bg-white/80 px-2 py-0.5 rounded border border-stone-200 font-mono">
+                        Engine: {% if ai_advisory and ai_advisory.source %}{{ ai_advisory.source }}{% else %}Google Gemini AI (gemini-3.7-flash){% endif %}
+                    </span>
+                </div>
+                <h3 id="advisory-headline" class="text-base sm:text-lg font-bold text-stone-900 leading-snug">
+                    {% if ai_advisory and ai_advisory.headline %}
+                        {{ ai_advisory.headline }}
+                    {% else %}
+                        Air quality in {{ aqi.location_name }} is {{ aqi.category|lower }} (AQI: {{ aqi.aqi }}).
+                    {% endif %}
+                </h3>
+            </div>
+
+            <!-- AI Intelligence Card with Perspective Switcher -->
+            <div class="bg-white/95 backdrop-blur-xs p-4 rounded-xl border border-black/10 text-xs mb-5 shadow-xs space-y-3">
+                <div class="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-stone-100">
+                    <div class="flex items-center gap-2">
+                        <div class="p-1 rounded bg-[#1B5D77] text-white">
+                            <span>&#10022;</span>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-stone-900 text-xs sm:text-sm">Gemini Climate Intelligence & Dispersion Analysis</h4>
+                            <p class="text-[11px] text-stone-500">Synthesizing terrain, localized emissions, and WHO particulate thresholds</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Perspective Switcher -->
+                    <div class="flex items-center bg-stone-100 p-0.5 rounded-lg border border-stone-200 text-[11px]">
+                        <button type="button" onclick="switchAiPerspective('overview')" id="tab-ai-overview" class="px-2.5 py-1 rounded-md font-medium transition cursor-pointer bg-[#1B5D77] text-white shadow-2xs">Overview</button>
+                        <button type="button" onclick="switchAiPerspective('health')" id="tab-ai-health" class="px-2.5 py-1 rounded-md font-medium transition cursor-pointer text-stone-600 hover:text-stone-900">Health & Seniors</button>
+                        <button type="button" onclick="switchAiPerspective('transit')" id="tab-ai-transit" class="px-2.5 py-1 rounded-md font-medium transition cursor-pointer text-stone-600 hover:text-stone-900">Transit Flow</button>
+                        <button type="button" onclick="switchAiPerspective('indoor')" id="tab-ai-indoor" class="px-2.5 py-1 rounded-md font-medium transition cursor-pointer text-stone-600 hover:text-stone-900">Filtration</button>
+                    </div>
+                </div>
+
+                <div id="ai-tab-view-overview" class="space-y-2">
+                    <p id="advisory-ai-summary" class="text-stone-800 leading-relaxed text-[12.5px]">
+                        {% if ai_advisory and ai_advisory.aiSummary %}
+                            {{ ai_advisory.aiSummary }}
+                        {% else %}
+                            Atmospheric circulation in {{ aqi.location_name }} indicates stable dispersion for particulate matter. Prioritize zero-emission transport to preserve clean air baselines.
+                        {% endif %}
+                    </p>
+                </div>
+
+                <div id="ai-tab-view-health" class="space-y-2 hidden">
+                    <div class="flex items-start gap-2 bg-emerald-50/70 p-2.5 rounded-lg border border-emerald-200/80">
+                        <span class="text-emerald-700 font-bold mt-0.5">&#10004;</span>
+                        <div>
+                            <span class="font-bold text-emerald-950 block mb-0.5">Vulnerable Population & High-Exertion Guidance</span>
+                            <p id="advisory-tab-health-text" class="text-emerald-900 text-[12px] leading-relaxed">
+                                {% if ai_advisory and ai_advisory.outdoor %}{{ ai_advisory.outdoor }}{% else %}Atmospheric conditions pose zero cardiovascular or respiratory barriers for children, runners, or seniors.{% endif %}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="ai-tab-view-transit" class="space-y-2 hidden">
+                    <div class="flex items-start gap-2 bg-indigo-50/70 p-2.5 rounded-lg border border-indigo-200/80">
+                        <span class="text-indigo-700 font-bold mt-0.5">&#128690;</span>
+                        <div>
+                            <span class="font-bold text-indigo-950 block mb-0.5">Urban Commuter & Emission Reduction Protocol</span>
+                            <p id="advisory-tab-transit-text" class="text-indigo-900 text-[12px] leading-relaxed">
+                                {% if ai_advisory and ai_advisory.commute %}{{ ai_advisory.commute }}{% else %}Choose walking, bicycling, or electrified public transit to reduce localized nitrogen dioxide and particulate spikes.{% endif %}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="ai-tab-view-indoor" class="space-y-2 hidden">
+                    <div class="flex items-start gap-2 bg-amber-50/70 p-2.5 rounded-lg border border-amber-200/80">
+                        <span class="text-amber-700 font-bold mt-0.5">&#127968;</span>
+                        <div>
+                            <span class="font-bold text-amber-950 block mb-0.5">Indoor Air Quality, Ventilation & HEPA Filtration</span>
+                            <p id="advisory-tab-indoor-text" class="text-amber-900 text-[12px] leading-relaxed">
+                                {% if ai_advisory and ai_advisory.indoor %}{{ ai_advisory.indoor }}{% else %}Open windows during midday hours to flush stale air and utilize mechanical filtration during traffic peaks.{% endif %}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 4 Action Recommendation Pillars -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+                <div class="bg-white/95 p-3.5 rounded-xl border border-black/10 flex flex-col justify-between hover:shadow-md transition">
+                    <div>
+                        <div class="font-bold text-stone-900 flex items-center justify-between mb-2">
+                            <div class="flex items-center gap-1.5">
+                                <span class="p-1 rounded bg-emerald-100 text-emerald-800 font-bold">&#9658;</span>
+                                <span>Outdoor Activity</span>
+                            </div>
+                            <span class="text-[10px] font-bold text-emerald-800 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">AI Rec</span>
+                        </div>
+                        <p id="advisory-outdoor" class="text-stone-700 leading-relaxed text-[11.5px]">
+                            {% if ai_advisory and (ai_advisory.outdoor or ai_advisory.outdoorAdvice) %}{{ ai_advisory.outdoor or ai_advisory.outdoorAdvice }}{% else %}Ideal conditions for outdoor sports, cycling, running, and children’s activities.{% endif %}
+                        </p>
+                    </div>
+                    <div class="mt-3 pt-2 border-t border-stone-100 flex items-center justify-between text-[10px] text-stone-500 font-medium">
+                        <span>Aerobic & Cardio</span>
+                        <span class="text-[#1B5D77] font-semibold">Gemini Validated</span>
+                    </div>
+                </div>
+
+                <div class="bg-white/95 p-3.5 rounded-xl border border-black/10 flex flex-col justify-between hover:shadow-md transition">
+                    <div>
+                        <div class="font-bold text-stone-900 flex items-center justify-between mb-2">
+                            <div class="flex items-center gap-1.5">
+                                <span class="p-1 rounded bg-blue-100 text-blue-800 font-bold">&#9658;</span>
+                                <span>Indoor Air & Windows</span>
+                            </div>
+                            <span class="text-[10px] font-bold text-blue-800 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-200">AI Rec</span>
+                        </div>
+                        <p id="advisory-indoor" class="text-stone-700 leading-relaxed text-[11.5px]">
+                            {% if ai_advisory and (ai_advisory.indoor or ai_advisory.indoorAdvice) %}{{ ai_advisory.indoor or ai_advisory.indoorAdvice }}{% else %}Excellent time to open windows and naturally ventilate home living spaces.{% endif %}
+                        </p>
+                    </div>
+                    <div class="mt-3 pt-2 border-t border-stone-100 flex items-center justify-between text-[10px] text-stone-500 font-medium">
+                        <span>Ventilation Timing</span>
+                        <span class="text-[#1B5D77] font-semibold">HEPA Priority</span>
+                    </div>
+                </div>
+
+                <div class="bg-white/95 p-3.5 rounded-xl border border-black/10 flex flex-col justify-between hover:shadow-md transition">
+                    <div>
+                        <div class="font-bold text-stone-900 flex items-center justify-between mb-2">
+                            <div class="flex items-center gap-1.5">
+                                <span class="p-1 rounded bg-indigo-100 text-indigo-800 font-bold">&#9658;</span>
+                                <span>Commute Choice</span>
+                            </div>
+                            <span class="text-[10px] font-bold text-indigo-800 bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-200">AI Rec</span>
+                        </div>
+                        <p id="advisory-commute" class="text-stone-700 leading-relaxed text-[11.5px]">
+                            {% if ai_advisory and (ai_advisory.commute or ai_advisory.commuteAdvice) %}{{ ai_advisory.commute or ai_advisory.commuteAdvice }}{% else %}Take advantage of the fresh air by walking or bicycling for your trips today.{% endif %}
+                        </p>
+                    </div>
+                    <div class="mt-3 pt-2 border-t border-stone-100 flex items-center justify-between text-[10px] text-stone-500 font-medium">
+                        <span>Transit & Micromobility</span>
+                        <span class="text-[#DE6738] font-semibold">Low Emission</span>
+                    </div>
+                </div>
+
+                <div class="bg-white/95 p-3.5 rounded-xl border border-black/10 flex flex-col justify-between hover:shadow-md transition">
+                    <div>
+                        <div class="font-bold text-stone-900 flex items-center justify-between mb-2">
+                            <div class="flex items-center gap-1.5">
+                                <span class="p-1 rounded bg-purple-100 text-purple-800 font-bold">&#9658;</span>
+                                <span>Direct Action</span>
+                            </div>
+                            <span class="text-[10px] font-bold text-purple-800 bg-purple-50 px-1.5 py-0.5 rounded border border-purple-200">High Impact</span>
+                        </div>
+                        <p id="advisory-action" class="text-stone-700 leading-relaxed text-[11.5px]">
+                            {% if ai_advisory and (ai_advisory.action or ai_advisory.actionRecommendation) %}{{ ai_advisory.action or ai_advisory.actionRecommendation }}{% else %}Help keep the air clean: avoid engine idling and support active transit in your neighborhood.{% endif %}
+                        </p>
+                    </div>
+                    <div class="mt-3 pt-2 border-t border-stone-100 flex items-center justify-between text-[10px] text-stone-500 font-medium">
+                        <span>Community Impact</span>
+                        <span class="text-[#DE6738] font-semibold">Top Action</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- City Clean Air Action Toolkit Section -->
+        <section class="bg-white rounded-xl border border-stone-200 p-6 shadow-sm">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-5 border-b border-stone-100">
+                <div>
+                    <div class="flex items-center gap-2">
+                        <span class="w-2.5 h-2.5 rounded-full bg-[#1B5D77]"></span>
+                        <h2 class="text-lg font-bold text-stone-900">City Clean Air Action Toolkit</h2>
+                        <span class="px-2 py-0.5 rounded-full bg-[#E9F2F5] text-[#1B5D77] border border-[#D4E7ED] text-[11px] font-semibold">
+                            12 High-Impact Practices
+                        </span>
+                    </div>
+                    <p class="text-xs text-stone-500 mt-1">
+                        Evidence-based steps you, your household, and your community can take to improve urban air quality.
+                    </p>
+                </div>
+
+                <!-- Score Meter -->
+                <div class="bg-stone-50 border border-stone-200 rounded-lg p-3 min-w-[240px]">
+                    <div class="flex items-center justify-between text-xs mb-1.5">
+                        <span class="font-semibold text-stone-700">Your Clean Air Score</span>
+                        <span id="clean-air-score-val" class="font-mono font-bold text-[#1B5D77]">0/12 (0%)</span>
+                    </div>
+                    <div class="w-full bg-stone-200 rounded-full h-2 overflow-hidden">
+                        <div id="clean-air-progress-bar" class="bg-[#1B5D77] h-2 rounded-full transition-all duration-500 ease-out" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Category Filter Buttons -->
+            <div class="flex flex-wrap items-center gap-2 pt-4 pb-5">
+                <button type="button" onclick="filterToolkit('all')" id="tab-btn-all" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-[#1B5D77] text-white shadow-sm transition cursor-pointer">
+                    All Solutions (12)
+                </button>
+                <button type="button" onclick="filterToolkit('mobility')" id="tab-btn-mobility" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-[#E9F2F5] text-[#1B5D77] hover:bg-[#D4E7ED] border border-[#D4E7ED] transition cursor-pointer">
+                    Cleaner Mobility (4)
+                </button>
+                <button type="button" onclick="filterToolkit('household')" id="tab-btn-household" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-[#FDF3EE] text-[#DE6738] hover:bg-[#FBE7DE] border border-[#FBE7DE] transition cursor-pointer">
+                    Household & Yard (4)
+                </button>
+                <button type="button" onclick="filterToolkit('nature')" id="tab-btn-nature" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-50 text-emerald-900 hover:bg-emerald-100 border border-emerald-200/60 transition cursor-pointer">
+                    Urban Nature & Trees (3)
+                </button>
+                <button type="button" onclick="filterToolkit('civic')" id="tab-btn-civic" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-purple-50 text-purple-900 hover:bg-purple-100 border border-purple-200/60 transition cursor-pointer">
+                    Civic & Community (3)
+                </button>
+            </div>
+
+            <!-- Action Cards Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                
+                <!-- 1. Zero-Idling -->
+                <div class="action-card toolkit-mobility rounded-xl border p-4 flex flex-col justify-between transition bg-stone-50/70 border-stone-200 hover:border-emerald-300" data-id="mob-1">
+                    <div>
+                        <div class="flex items-center justify-between gap-2 pb-2.5 border-b border-stone-200/60">
+                            <span class="text-[11px] font-semibold text-stone-600 uppercase tracking-wider">&#128663; Cleaner Mobility</span>
+                            <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-purple-100 text-purple-800 border border-purple-200">Immediate Local Relief</span>
+                        </div>
+                        <h4 class="font-bold text-stone-900 text-sm mt-3 leading-snug">Zero-Idling Habit at Stops & Pickups</h4>
+                        <p class="text-xs text-stone-600 mt-1.5 leading-relaxed">Turn off vehicle engines whenever stopped for more than 10 seconds (school lines, curbside waiting, drive-thrus).</p>
+                        <div class="mt-3 p-2.5 bg-white rounded-lg border border-stone-200/70 text-xs">
+                            <span class="font-semibold text-emerald-800 text-[11px] block">&#10024; Urban Air Benefit:</span>
+                            <p class="text-stone-600 text-[11px]">Eliminates localized PM2.5 and NOx hotspots right at pedestrian and child breathing levels.</p>
+                        </div>
+                    </div>
+                    <div class="pt-3 mt-3 border-t border-stone-200/60 flex items-center justify-between gap-2">
+                        <label class="flex items-center gap-1.5 text-xs text-stone-700 hover:text-emerald-700 cursor-pointer font-medium">
+                            <input type="checkbox" onchange="toggleToolkitPractice('mob-1', this.checked)" class="rounded text-emerald-600 focus:ring-emerald-500">
+                            <span>I do this</span>
+                        </label>
+                        <button type="button" onclick="populatePledgeForm('Sustainable Transport', 'High Impact', 'Turn off vehicle engines when stopped for >10 seconds to eliminate idling exhaust in neighborhood zones.')" class="px-2.5 py-1 bg-emerald-700 hover:bg-emerald-800 text-white rounded-md text-xs font-semibold transition cursor-pointer">
+                            Pledge This &rarr;
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 2. Active Transit -->
+                <div class="action-card toolkit-mobility rounded-xl border p-4 flex flex-col justify-between transition bg-stone-50/70 border-stone-200 hover:border-emerald-300" data-id="mob-2">
+                    <div>
+                        <div class="flex items-center justify-between gap-2 pb-2.5 border-b border-stone-200/60">
+                            <span class="text-[11px] font-semibold text-stone-600 uppercase tracking-wider">&#128690; Cleaner Mobility</span>
+                            <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-purple-100 text-purple-800 border border-purple-200">City-Scale Impact</span>
+                        </div>
+                        <h4 class="font-bold text-stone-900 text-sm mt-3 leading-snug">Active & Shared Transit Commuting</h4>
+                        <p class="text-xs text-stone-600 mt-1.5 leading-relaxed">Replace 1 to 2 solo automobile trips each week with cycling, walking, light rail, bus transit, or organized carpools.</p>
+                        <div class="mt-3 p-2.5 bg-white rounded-lg border border-stone-200/70 text-xs">
+                            <span class="font-semibold text-emerald-800 text-[11px] block">&#10024; Urban Air Benefit:</span>
+                            <p class="text-stone-600 text-[11px]">Cuts traffic congestion by up to 20% and prevents ~400 kg of annual tailpipe emissions per commuter.</p>
+                        </div>
+                    </div>
+                    <div class="pt-3 mt-3 border-t border-stone-200/60 flex items-center justify-between gap-2">
+                        <label class="flex items-center gap-1.5 text-xs text-stone-700 hover:text-emerald-700 cursor-pointer font-medium">
+                            <input type="checkbox" onchange="toggleToolkitPractice('mob-2', this.checked)" class="rounded text-emerald-600 focus:ring-emerald-500">
+                            <span>I do this</span>
+                        </label>
+                        <button type="button" onclick="populatePledgeForm('Sustainable Transport', 'High Impact', 'Replace at least 2 solo car trips per week with cycling, walking, or electrified public transit.')" class="px-2.5 py-1 bg-emerald-700 hover:bg-emerald-800 text-white rounded-md text-xs font-semibold transition cursor-pointer">
+                            Pledge This &rarr;
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 3. Eco Driving -->
+                <div class="action-card toolkit-mobility rounded-xl border p-4 flex flex-col justify-between transition bg-stone-50/70 border-stone-200 hover:border-emerald-300" data-id="mob-3">
+                    <div>
+                        <div class="flex items-center justify-between gap-2 pb-2.5 border-b border-stone-200/60">
+                            <span class="text-[11px] font-semibold text-stone-600 uppercase tracking-wider">&#9881; Cleaner Mobility</span>
+                            <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-stone-200 text-stone-700 border border-stone-300">Particulate Reduction</span>
+                        </div>
+                        <h4 class="font-bold text-stone-900 text-sm mt-3 leading-snug">Eco-Driving & Tire Pressure Optimization</h4>
+                        <p class="text-xs text-stone-600 mt-1.5 leading-relaxed">Keep tires inflated to manufacturer specifications and practice gentle braking to minimize tire and brake pad dust.</p>
+                        <div class="mt-3 p-2.5 bg-white rounded-lg border border-stone-200/70 text-xs">
+                            <span class="font-semibold text-emerald-800 text-[11px] block">&#10024; Urban Air Benefit:</span>
+                            <p class="text-stone-600 text-[11px]">Non-exhaust emissions (tire and brake wear) account for over 50% of roadway particulate matter.</p>
+                        </div>
+                    </div>
+                    <div class="pt-3 mt-3 border-t border-stone-200/60 flex items-center justify-between gap-2">
+                        <label class="flex items-center gap-1.5 text-xs text-stone-700 hover:text-emerald-700 cursor-pointer font-medium">
+                            <input type="checkbox" onchange="toggleToolkitPractice('mob-3', this.checked)" class="rounded text-emerald-600 focus:ring-emerald-500">
+                            <span>I do this</span>
+                        </label>
+                        <button type="button" onclick="populatePledgeForm('Sustainable Transport', 'Medium Impact', 'Maintain optimal tire inflation and practice gentle braking to reduce roadway particulate dust.')" class="px-2.5 py-1 bg-emerald-700 hover:bg-emerald-800 text-white rounded-md text-xs font-semibold transition cursor-pointer">
+                            Pledge This &rarr;
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 4. Evening Refueling -->
+                <div class="action-card toolkit-mobility rounded-xl border p-4 flex flex-col justify-between transition bg-stone-50/70 border-stone-200 hover:border-emerald-300" data-id="mob-4">
+                    <div>
+                        <div class="flex items-center justify-between gap-2 pb-2.5 border-b border-stone-200/60">
+                            <span class="text-[11px] font-semibold text-stone-600 uppercase tracking-wider">&#128293; Cleaner Mobility</span>
+                            <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-stone-200 text-stone-700 border border-stone-300">Smog Prevention</span>
+                        </div>
+                        <h4 class="font-bold text-stone-900 text-sm mt-3 leading-snug">Refuel Vehicles After Sunset on Hot Days</h4>
+                        <p class="text-xs text-stone-600 mt-1.5 leading-relaxed">Pump gasoline in the cooler evening hours rather than the middle of hot, sunny days.</p>
+                        <div class="mt-3 p-2.5 bg-white rounded-lg border border-stone-200/70 text-xs">
+                            <span class="font-semibold text-emerald-800 text-[11px] block">&#10024; Urban Air Benefit:</span>
+                            <p class="text-stone-600 text-[11px]">Prevents volatile fuel vapors from reacting photochemically in daytime heat to form ground-level ozone smog.</p>
+                        </div>
+                    </div>
+                    <div class="pt-3 mt-3 border-t border-stone-200/60 flex items-center justify-between gap-2">
+                        <label class="flex items-center gap-1.5 text-xs text-stone-700 hover:text-emerald-700 cursor-pointer font-medium">
+                            <input type="checkbox" onchange="toggleToolkitPractice('mob-4', this.checked)" class="rounded text-emerald-600 focus:ring-emerald-500">
+                            <span>I do this</span>
+                        </label>
+                        <button type="button" onclick="populatePledgeForm('Sustainable Transport', 'Medium Impact', 'Only refuel gasoline vehicles after sunset during hot weather to reduce daytime photochemical ozone formation.')" class="px-2.5 py-1 bg-emerald-700 hover:bg-emerald-800 text-white rounded-md text-xs font-semibold transition cursor-pointer">
+                            Pledge This &rarr;
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 5. Electric Yard Tools -->
+                <div class="action-card toolkit-household rounded-xl border p-4 flex flex-col justify-between transition bg-stone-50/70 border-stone-200 hover:border-emerald-300" data-id="house-1">
+                    <div>
+                        <div class="flex items-center justify-between gap-2 pb-2.5 border-b border-stone-200/60">
+                            <span class="text-[11px] font-semibold text-stone-600 uppercase tracking-wider">&#9889; Household & Yard</span>
+                            <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-purple-100 text-purple-800 border border-purple-200">Major Emission Cut</span>
+                        </div>
+                        <h4 class="font-bold text-stone-900 text-sm mt-3 leading-snug">Transition to Electric Yard & Lawn Tools</h4>
+                        <p class="text-xs text-stone-600 mt-1.5 leading-relaxed">Replace 2-stroke gasoline leaf blowers, trimmers, and mowers with modern lithium battery-electric models.</p>
+                        <div class="mt-3 p-2.5 bg-white rounded-lg border border-stone-200/70 text-xs">
+                            <span class="font-semibold text-emerald-800 text-[11px] block">&#10024; Urban Air Benefit:</span>
+                            <p class="text-stone-600 text-[11px]">Operating a gas leaf blower for 1 hr emits as much volatile hydrocarbons as driving a passenger car 1,100 miles.</p>
+                        </div>
+                    </div>
+                    <div class="pt-3 mt-3 border-t border-stone-200/60 flex items-center justify-between gap-2">
+                        <label class="flex items-center gap-1.5 text-xs text-stone-700 hover:text-emerald-700 cursor-pointer font-medium">
+                            <input type="checkbox" onchange="toggleToolkitPractice('house-1', this.checked)" class="rounded text-emerald-600 focus:ring-emerald-500">
+                            <span>I do this</span>
+                        </label>
+                        <button type="button" onclick="populatePledgeForm('Energy Conservation', 'High Impact', 'Switch all yard maintenance tools to battery-electric to eliminate 2-stroke hydrocarbon exhaust in our neighborhood.')" class="px-2.5 py-1 bg-emerald-700 hover:bg-emerald-800 text-white rounded-md text-xs font-semibold transition cursor-pointer">
+                            Pledge This &rarr;
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 6. Zero Open Burning -->
+                <div class="action-card toolkit-household rounded-xl border p-4 flex flex-col justify-between transition bg-stone-50/70 border-stone-200 hover:border-emerald-300" data-id="house-2">
+                    <div>
+                        <div class="flex items-center justify-between gap-2 pb-2.5 border-b border-stone-200/60">
+                            <span class="text-[11px] font-semibold text-stone-600 uppercase tracking-wider">&#127968; Household & Yard</span>
+                            <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-purple-100 text-purple-800 border border-purple-200">Air Basin Protection</span>
+                        </div>
+                        <h4 class="font-bold text-stone-900 text-sm mt-3 leading-snug">Eliminate Backyard & Waste Burning</h4>
+                        <p class="text-xs text-stone-600 mt-1.5 leading-relaxed">Never burn yard leaves, branches, trash, or treated wood in open residential fire pits.</p>
+                        <div class="mt-3 p-2.5 bg-white rounded-lg border border-stone-200/70 text-xs">
+                            <span class="font-semibold text-emerald-800 text-[11px] block">&#10024; Urban Air Benefit:</span>
+                            <p class="text-stone-600 text-[11px]">Directly prevents dense plumes of black carbon, dioxins, and fine particles that settle in neighboring homes.</p>
+                        </div>
+                    </div>
+                    <div class="pt-3 mt-3 border-t border-stone-200/60 flex items-center justify-between gap-2">
+                        <label class="flex items-center gap-1.5 text-xs text-stone-700 hover:text-emerald-700 cursor-pointer font-medium">
+                            <input type="checkbox" onchange="toggleToolkitPractice('house-2', this.checked)" class="rounded text-emerald-600 focus:ring-emerald-500">
+                            <span>I do this</span>
+                        </label>
+                        <button type="button" onclick="populatePledgeForm('Reforestation & Waste', 'High Impact', 'Commit to zero backyard burning of leaves or waste, opting for municipal composting and green waste recycling.')" class="px-2.5 py-1 bg-emerald-700 hover:bg-emerald-800 text-white rounded-md text-xs font-semibold transition cursor-pointer">
+                            Pledge This &rarr;
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 7. Induction & Heat Pumps -->
+                <div class="action-card toolkit-household rounded-xl border p-4 flex flex-col justify-between transition bg-stone-50/70 border-stone-200 hover:border-emerald-300" data-id="house-3">
+                    <div>
+                        <div class="flex items-center justify-between gap-2 pb-2.5 border-b border-stone-200/60">
+                            <span class="text-[11px] font-semibold text-stone-600 uppercase tracking-wider">&#9889; Household & Yard</span>
+                            <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-purple-100 text-purple-800 border border-purple-200">Indoor & Urban Quality</span>
+                        </div>
+                        <h4 class="font-bold text-stone-900 text-sm mt-3 leading-snug">Switch to Clean Induction & Heat Pumps</h4>
+                        <p class="text-xs text-stone-600 mt-1.5 leading-relaxed">Upgrade from gas ranges and oil heaters to clean magnetic induction cooking and high-efficiency heat pumps.</p>
+                        <div class="mt-3 p-2.5 bg-white rounded-lg border border-stone-200/70 text-xs">
+                            <span class="font-semibold text-emerald-800 text-[11px] block">&#10024; Urban Air Benefit:</span>
+                            <p class="text-stone-600 text-[11px]">Dramatically lowers both indoor nitrogen dioxide exposure and building sector combustion emissions.</p>
+                        </div>
+                    </div>
+                    <div class="pt-3 mt-3 border-t border-stone-200/60 flex items-center justify-between gap-2">
+                        <label class="flex items-center gap-1.5 text-xs text-stone-700 hover:text-emerald-700 cursor-pointer font-medium">
+                            <input type="checkbox" onchange="toggleToolkitPractice('house-3', this.checked)" class="rounded text-emerald-600 focus:ring-emerald-500">
+                            <span>I do this</span>
+                        </label>
+                        <button type="button" onclick="populatePledgeForm('Energy Conservation', 'High Impact', 'Transition home cooking and heating systems to electric induction cooktops and heat pumps.')" class="px-2.5 py-1 bg-emerald-700 hover:bg-emerald-800 text-white rounded-md text-xs font-semibold transition cursor-pointer">
+                            Pledge This &rarr;
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 8. Low-VOC Paints -->
+                <div class="action-card toolkit-household rounded-xl border p-4 flex flex-col justify-between transition bg-stone-50/70 border-stone-200 hover:border-emerald-300" data-id="house-4">
+                    <div>
+                        <div class="flex items-center justify-between gap-2 pb-2.5 border-b border-stone-200/60">
+                            <span class="text-[11px] font-semibold text-stone-600 uppercase tracking-wider">&#128737; Household & Yard</span>
+                            <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-stone-200 text-stone-700 border border-stone-300">Chemical Smog Shield</span>
+                        </div>
+                        <h4 class="font-bold text-stone-900 text-sm mt-3 leading-snug">Choose Zero/Low-VOC Paints & Solvents</h4>
+                        <p class="text-xs text-stone-600 mt-1.5 leading-relaxed">Use water-based, zero-VOC paints, adhesives, varnishes, and non-aerosol household cleaning supplies.</p>
+                        <div class="mt-3 p-2.5 bg-white rounded-lg border border-stone-200/70 text-xs">
+                            <span class="font-semibold text-emerald-800 text-[11px] block">&#10024; Urban Air Benefit:</span>
+                            <p class="text-stone-600 text-[11px]">Reduces evaporative organic chemical vapors that react with sunlight to create toxic city smog.</p>
+                        </div>
+                    </div>
+                    <div class="pt-3 mt-3 border-t border-stone-200/60 flex items-center justify-between gap-2">
+                        <label class="flex items-center gap-1.5 text-xs text-stone-700 hover:text-emerald-700 cursor-pointer font-medium">
+                            <input type="checkbox" onchange="toggleToolkitPractice('house-4', this.checked)" class="rounded text-emerald-600 focus:ring-emerald-500">
+                            <span>I do this</span>
+                        </label>
+                        <button type="button" onclick="populatePledgeForm('Energy Conservation', 'Medium Impact', 'Exclusively purchase zero-VOC paints and eco-certified non-aerosol cleaning products for home maintenance.')" class="px-2.5 py-1 bg-emerald-700 hover:bg-emerald-800 text-white rounded-md text-xs font-semibold transition cursor-pointer">
+                            Pledge This &rarr;
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 9. Particulate Hedges -->
+                <div class="action-card toolkit-nature rounded-xl border p-4 flex flex-col justify-between transition bg-stone-50/70 border-stone-200 hover:border-emerald-300" data-id="green-1">
+                    <div>
+                        <div class="flex items-center justify-between gap-2 pb-2.5 border-b border-stone-200/60">
+                            <span class="text-[11px] font-semibold text-stone-600 uppercase tracking-wider">&#127795; Urban Nature</span>
+                            <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-purple-100 text-purple-800 border border-purple-200">Bio-Filter Barrier</span>
+                        </div>
+                        <h4 class="font-bold text-stone-900 text-sm mt-3 leading-snug">Plant Particulate-Trapping Foliage & Hedges</h4>
+                        <p class="text-xs text-stone-600 mt-1.5 leading-relaxed">Plant rough-leafed native trees, dense evergreen shrubs, and hedges along perimeter fences.</p>
+                        <div class="mt-3 p-2.5 bg-white rounded-lg border border-stone-200/70 text-xs">
+                            <span class="font-semibold text-emerald-800 text-[11px] block">&#10024; Urban Air Benefit:</span>
+                            <p class="text-stone-600 text-[11px]">Dense roadside vegetative buffers physically trap up to 40% of ambient fine particulate dust before it enters homes.</p>
+                        </div>
+                    </div>
+                    <div class="pt-3 mt-3 border-t border-stone-200/60 flex items-center justify-between gap-2">
+                        <label class="flex items-center gap-1.5 text-xs text-stone-700 hover:text-emerald-700 cursor-pointer font-medium">
+                            <input type="checkbox" onchange="toggleToolkitPractice('green-1', this.checked)" class="rounded text-emerald-600 focus:ring-emerald-500">
+                            <span>I do this</span>
+                        </label>
+                        <button type="button" onclick="populatePledgeForm('Reforestation & Waste', 'High Impact', 'Plant particulate-filtering native evergreen trees or perimeter hedges to form a biological dust barrier.')" class="px-2.5 py-1 bg-emerald-700 hover:bg-emerald-800 text-white rounded-md text-xs font-semibold transition cursor-pointer">
+                            Pledge This &rarr;
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 10. Balcony Gardens -->
+                <div class="action-card toolkit-nature rounded-xl border p-4 flex flex-col justify-between transition bg-stone-50/70 border-stone-200 hover:border-emerald-300" data-id="green-2">
+                    <div>
+                        <div class="flex items-center justify-between gap-2 pb-2.5 border-b border-stone-200/60">
+                            <span class="text-[11px] font-semibold text-stone-600 uppercase tracking-wider">&#127793; Urban Nature</span>
+                            <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-stone-200 text-stone-700 border border-stone-300">Microclimate Cooling</span>
+                        </div>
+                        <h4 class="font-bold text-stone-900 text-sm mt-3 leading-snug">Cultivate Balcony & Rooftop Green Spaces</h4>
+                        <p class="text-xs text-stone-600 mt-1.5 leading-relaxed">Install container plant boxes, balcony green walls, or rooftop gardens in apartment buildings and urban homes.</p>
+                        <div class="mt-3 p-2.5 bg-white rounded-lg border border-stone-200/70 text-xs">
+                            <span class="font-semibold text-emerald-800 text-[11px] block">&#10024; Urban Air Benefit:</span>
+                            <p class="text-stone-600 text-[11px]">Cools urban heat island microclimates by 1–3°C and absorbs gaseous airborne pollutants.</p>
+                        </div>
+                    </div>
+                    <div class="pt-3 mt-3 border-t border-stone-200/60 flex items-center justify-between gap-2">
+                        <label class="flex items-center gap-1.5 text-xs text-stone-700 hover:text-emerald-700 cursor-pointer font-medium">
+                            <input type="checkbox" onchange="toggleToolkitPractice('green-2', this.checked)" class="rounded text-emerald-600 focus:ring-emerald-500">
+                            <span>I do this</span>
+                        </label>
+                        <button type="button" onclick="populatePledgeForm('Reforestation & Waste', 'Medium Impact', 'Build a container garden or green balcony space to improve local microclimate cooling and biodiversity.')" class="px-2.5 py-1 bg-emerald-700 hover:bg-emerald-800 text-white rounded-md text-xs font-semibold transition cursor-pointer">
+                            Pledge This &rarr;
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 11. Tree Canopy Equity -->
+                <div class="action-card toolkit-nature rounded-xl border p-4 flex flex-col justify-between transition bg-stone-50/70 border-stone-200 hover:border-emerald-300" data-id="green-3">
+                    <div>
+                        <div class="flex items-center justify-between gap-2 pb-2.5 border-b border-stone-200/60">
+                            <span class="text-[11px] font-semibold text-stone-600 uppercase tracking-wider">&#127795; Urban Nature</span>
+                            <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-purple-100 text-purple-800 border border-purple-200">Community Reforestation</span>
+                        </div>
+                        <h4 class="font-bold text-stone-900 text-sm mt-3 leading-snug">Support Tree Canopy Equity in High-Traffic Zones</h4>
+                        <p class="text-xs text-stone-600 mt-1.5 leading-relaxed">Volunteer with or sponsor neighborhood tree-planting campaigns targeting industrial corridors and transit arterial roads.</p>
+                        <div class="mt-3 p-2.5 bg-white rounded-lg border border-stone-200/70 text-xs">
+                            <span class="font-semibold text-emerald-800 text-[11px] block">&#10024; Urban Air Benefit:</span>
+                            <p class="text-stone-600 text-[11px]">Expands shade cover in underserved heat islands and creates enduring air-cleansing urban tree corridors.</p>
+                        </div>
+                    </div>
+                    <div class="pt-3 mt-3 border-t border-stone-200/60 flex items-center justify-between gap-2">
+                        <label class="flex items-center gap-1.5 text-xs text-stone-700 hover:text-emerald-700 cursor-pointer font-medium">
+                            <input type="checkbox" onchange="toggleToolkitPractice('green-3', this.checked)" class="rounded text-emerald-600 focus:ring-emerald-500">
+                            <span>I do this</span>
+                        </label>
+                        <button type="button" onclick="populatePledgeForm('Reforestation & Waste', 'High Impact', 'Volunteer with community tree-planting groups to expand the urban forest canopy in dense traffic corridors.')" class="px-2.5 py-1 bg-emerald-700 hover:bg-emerald-800 text-white rounded-md text-xs font-semibold transition cursor-pointer">
+                            Pledge This &rarr;
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 12. Civic Advocacy -->
+                <div class="action-card toolkit-civic rounded-xl border p-4 flex flex-col justify-between transition bg-stone-50/70 border-stone-200 hover:border-emerald-300" data-id="civic-1">
+                    <div>
+                        <div class="flex items-center justify-between gap-2 pb-2.5 border-b border-stone-200/60">
+                            <span class="text-[11px] font-semibold text-stone-600 uppercase tracking-wider">&#128227; Civic Advocacy</span>
+                            <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-purple-100 text-purple-800 border border-purple-200">Structural Policy</span>
+                        </div>
+                        <h4 class="font-bold text-stone-900 text-sm mt-3 leading-snug">Advocate for Low-Emission Zones & Bike Corridors</h4>
+                        <p class="text-xs text-stone-600 mt-1.5 leading-relaxed">Petition municipal leaders for dedicated protected bike highways, pedestrian plazas, and fully electrified city bus fleets.</p>
+                        <div class="mt-3 p-2.5 bg-white rounded-lg border border-stone-200/70 text-xs">
+                            <span class="font-semibold text-emerald-800 text-[11px] block">&#10024; Urban Air Benefit:</span>
+                            <p class="text-stone-600 text-[11px]">Transforms city infrastructure to make clean transportation the safest, fastest, and most convenient choice.</p>
+                        </div>
+                    </div>
+                    <div class="pt-3 mt-3 border-t border-stone-200/60 flex items-center justify-between gap-2">
+                        <label class="flex items-center gap-1.5 text-xs text-stone-700 hover:text-emerald-700 cursor-pointer font-medium">
+                            <input type="checkbox" onchange="toggleToolkitPractice('civic-1', this.checked)" class="rounded text-emerald-600 focus:ring-emerald-500">
+                            <span>I do this</span>
+                        </label>
+                        <button type="button" onclick="populatePledgeForm('Policy & Advocacy', 'High Impact', 'Advocate in municipal forums for protected bike network expansion, bus electrification, and low-emission zones.')" class="px-2.5 py-1 bg-emerald-700 hover:bg-emerald-800 text-white rounded-md text-xs font-semibold transition cursor-pointer">
+                            Pledge This &rarr;
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 13. School Clean Air Zones -->
+                <div class="action-card toolkit-civic rounded-xl border p-4 flex flex-col justify-between transition bg-stone-50/70 border-stone-200 hover:border-emerald-300" data-id="civic-2">
+                    <div>
+                        <div class="flex items-center justify-between gap-2 pb-2.5 border-b border-stone-200/60">
+                            <span class="text-[11px] font-semibold text-stone-600 uppercase tracking-wider">&#128737; Civic Advocacy</span>
+                            <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-purple-100 text-purple-800 border border-purple-200">Protect Children</span>
+                        </div>
+                        <h4 class="font-bold text-stone-900 text-sm mt-3 leading-snug">Initiate School Clean-Air & No-Idling Zones</h4>
+                        <p class="text-xs text-stone-600 mt-1.5 leading-relaxed">Partner with local schools and PTAs to establish designated idle-free drop-off areas and organize walking school buses.</p>
+                        <div class="mt-3 p-2.5 bg-white rounded-lg border border-stone-200/70 text-xs">
+                            <span class="font-semibold text-emerald-800 text-[11px] block">&#10024; Urban Air Benefit:</span>
+                            <p class="text-stone-600 text-[11px]">Shields developing lungs from peak morning and afternoon diesel and gasoline exhaust concentrations.</p>
+                        </div>
+                    </div>
+                    <div class="pt-3 mt-3 border-t border-stone-200/60 flex items-center justify-between gap-2">
+                        <label class="flex items-center gap-1.5 text-xs text-stone-700 hover:text-emerald-700 cursor-pointer font-medium">
+                            <input type="checkbox" onchange="toggleToolkitPractice('civic-2', this.checked)" class="rounded text-emerald-600 focus:ring-emerald-500">
+                            <span>I do this</span>
+                        </label>
+                        <button type="button" onclick="populatePledgeForm('Policy & Advocacy', 'High Impact', 'Partner with school communities to enact strict idle-free pickup rules and organize neighborhood walking buses.')" class="px-2.5 py-1 bg-emerald-700 hover:bg-emerald-800 text-white rounded-md text-xs font-semibold transition cursor-pointer">
+                            Pledge This &rarr;
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 14. Report Violations -->
+                <div class="action-card toolkit-civic rounded-xl border p-4 flex flex-col justify-between transition bg-stone-50/70 border-stone-200 hover:border-emerald-300" data-id="civic-3">
+                    <div>
+                        <div class="flex items-center justify-between gap-2 pb-2.5 border-b border-stone-200/60">
+                            <span class="text-[11px] font-semibold text-stone-600 uppercase tracking-wider">&#128227; Civic Advocacy</span>
+                            <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-stone-200 text-stone-700 border border-stone-300">Enforcement Support</span>
+                        </div>
+                        <h4 class="font-bold text-stone-900 text-sm mt-3 leading-snug">Monitor & Report Industrial/Diesel Violations</h4>
+                        <p class="text-xs text-stone-600 mt-1.5 leading-relaxed">Use city 311 apps or environmental hotlines to report excessive commercial diesel truck idling and illegal smoke.</p>
+                        <div class="mt-3 p-2.5 bg-white rounded-lg border border-stone-200/70 text-xs">
+                            <span class="font-semibold text-emerald-800 text-[11px] block">&#10024; Urban Air Benefit:</span>
+                            <p class="text-stone-600 text-[11px]">Holds polluters accountable and supports municipal air quality regulation enforcement.</p>
+                        </div>
+                    </div>
+                    <div class="pt-3 mt-3 border-t border-stone-200/60 flex items-center justify-between gap-2">
+                        <label class="flex items-center gap-1.5 text-xs text-stone-700 hover:text-emerald-700 cursor-pointer font-medium">
+                            <input type="checkbox" onchange="toggleToolkitPractice('civic-3', this.checked)" class="rounded text-emerald-600 focus:ring-emerald-500">
+                            <span>I do this</span>
+                        </label>
+                        <button type="button" onclick="populatePledgeForm('Policy & Advocacy', 'Medium Impact', 'Use municipal 311 and environmental hotlines to report unpermitted burning and commercial diesel idling violations.')" class="px-2.5 py-1 bg-emerald-700 hover:bg-emerald-800 text-white rounded-md text-xs font-semibold transition cursor-pointer">
+                            Pledge This &rarr;
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- Main Workspace: Form + Pledges Feed -->
+        <section class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            
+            <!-- Left Column: Submit a Pledge Form & Community Action Blueprint -->
+            <div class="lg:col-span-1">
+                {% if submitted_pledge %}
+                <div class="bg-white rounded-xl border-2 border-[#DE6738] shadow-md p-5 space-y-4 text-stone-900 sticky top-6">
+                    <div class="bg-gradient-to-r from-[#1B5D77] to-[#14475B] text-white p-3.5 rounded-lg flex items-center justify-between gap-2 shadow-inner">
+                        <div class="flex items-center gap-2.5">
+                            <span class="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center font-bold text-sm text-[#ECC247]">✓</span>
+                            <div>
+                                <h3 class="font-bold text-xs">Pledge Saved to Database</h3>
+                                <p class="text-[11px] text-sky-100">Thank you, <strong>{{ submitted_pledge.name }}</strong>!</p>
+                            </div>
+                        </div>
+                        <a href="/" class="px-2.5 py-1 bg-white/10 hover:bg-white/20 border border-white/20 rounded text-[11px] font-medium text-white transition">
+                            + New Pledge
+                        </a>
+                    </div>
+
+                    <div class="bg-[#FDF3EE] border border-[#FBE7DE] rounded-lg p-3 text-xs">
+                        <div class="flex items-center justify-between gap-1 mb-1">
+                            <span class="font-semibold text-[#1B5D77] bg-[#E9F2F5] border border-[#D4E7ED] px-2 py-0.5 rounded-full text-[10px]">
+                                {{ submitted_pledge.category }}
+                            </span>
+                            <span class="text-[10px] text-[#DE6738] font-bold">{{ submitted_pledge.impact }}</span>
+                        </div>
+                        <p class="text-stone-800 italic font-medium">&ldquo;{{ submitted_pledge.pledge }}&rdquo;</p>
+                    </div>
+
+                    {% if ai_analysis and ai_analysis.keyEmissionsCut %}
+                    <div class="grid grid-cols-2 gap-2 text-xs">
+                        <div class="bg-stone-50 border border-stone-200 p-2.5 rounded-lg">
+                            <span class="text-[10px] text-stone-500 font-semibold uppercase tracking-wider block mb-0.5">Emissions Cut</span>
+                            <span class="text-stone-900 font-bold text-[11px] leading-tight block">{{ ai_analysis.keyEmissionsCut }}</span>
+                        </div>
+                        <div class="bg-stone-50 border border-stone-200 p-2.5 rounded-lg">
+                            <span class="text-[10px] text-stone-500 font-semibold uppercase tracking-wider block mb-0.5">Health Benefit</span>
+                            <span class="text-stone-900 font-bold text-[11px] leading-tight block">{{ ai_analysis.localHealthBenefit }}</span>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <div class="space-y-2 text-xs">
+                        <div class="flex items-center justify-between gap-1 flex-wrap font-bold text-stone-900 text-xs">
+                            <div class="flex items-center gap-1.5">
+                                <span class="text-[#DE6738]">✦</span>
+                                <h4>Community Action Roadmap</h4>
+                            </div>
+                            {% if ai_analysis %}
+                            <span class="text-[9px] font-mono px-1.5 py-0.5 rounded bg-[#E9F2F5] text-[#1B5D77] border border-[#D4E7ED]">
+                                {{ ai_analysis.source }}
+                            </span>
+                            {% endif %}
+                        </div>
+
+                        {% if ai_analysis and ai_analysis.summaryAnalysis %}
+                        <p class="text-[11px] text-stone-700 bg-stone-50 p-2.5 rounded-lg border border-stone-200 leading-relaxed">
+                            {{ ai_analysis.summaryAnalysis }}
+                        </p>
+                        {% endif %}
+
+                        <div class="space-y-2 pt-1">
+                            <div class="border border-stone-200 rounded-lg p-2.5 bg-stone-50/70 space-y-1.5">
+                                <div class="flex items-center justify-between">
+                                    <span class="px-1.5 py-0.5 rounded font-bold bg-[#E9F2F5] text-[#1B5D77] text-[10px]">Step 1 &bull; Today (First 24h)</span>
+                                </div>
+                                <p class="text-[11px] text-stone-800 font-medium">{% if ai_analysis and ai_analysis.step1 %}{{ ai_analysis.step1 }}{% else %}Establish your personal anti-emissions routine and setup zero-idling habits in school/curbside pickup lines.{% endif %}</p>
+                                <label class="flex items-center gap-2 text-[11px] text-stone-600 cursor-pointer">
+                                    <input type="checkbox" class="rounded text-[#1B5D77] focus:ring-[#1B5D77]">
+                                    <span>Establish immediate personal anti-idling routine</span>
+                                </label>
+                            </div>
+
+                            <div class="border border-stone-200 rounded-lg p-2.5 bg-stone-50/70 space-y-1.5">
+                                <div class="flex items-center justify-between">
+                                    <span class="px-1.5 py-0.5 rounded font-bold bg-[#E9F2F5] text-[#1B5D77] text-[10px]">Step 2 &bull; This Week (Days 2-7)</span>
+                                </div>
+                                <p class="text-[11px] text-stone-800 font-medium">{% if ai_analysis and ai_analysis.step2 %}{{ ai_analysis.step2 }}{% else %}Activate your neighborhood and school network with clean air guidelines.{% endif %}</p>
+                                <label class="flex items-center gap-2 text-[11px] text-stone-600 cursor-pointer">
+                                    <input type="checkbox" class="rounded text-[#1B5D77] focus:ring-[#1B5D77]">
+                                    <span>Share actionable flyers with local PTA or HOA group</span>
+                                </label>
+                            </div>
+
+                            <div class="border border-stone-200 rounded-lg p-2.5 bg-stone-50/70 space-y-1.5">
+                                <div class="flex items-center justify-between">
+                                    <span class="px-1.5 py-0.5 rounded font-bold bg-[#E9F2F5] text-[#1B5D77] text-[10px]">Step 3 &bull; Month 1+</span>
+                                </div>
+                                <p class="text-[11px] text-stone-800 font-medium">{% if ai_analysis and ai_analysis.step3 %}{{ ai_analysis.step3 }}{% else %}Engage city leadership for clean transit corridors and hyper-local air monitoring.{% endif %}</p>
+                                <label class="flex items-center gap-2 text-[11px] text-stone-600 cursor-pointer">
+                                    <input type="checkbox" class="rounded text-[#1B5D77] focus:ring-[#1B5D77]">
+                                    <span>Support policy advocacy & municipal comment</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="pt-2 border-t border-stone-200 flex items-center justify-between text-xs">
+                        <a href="/" class="w-full py-2 bg-[#1B5D77] hover:bg-[#14475B] text-white font-semibold rounded-lg text-center transition">
+                            Submit Another Clean Air Pledge &rarr;
+                        </a>
+                    </div>
+                </div>
+                {% else %}
+                <div class="bg-white rounded-xl border border-stone-200 p-6 shadow-sm sticky top-6">
+                    <h2 class="text-base font-bold text-stone-900 flex items-center gap-2">
+                        <span class="w-2.5 h-2.5 rounded-full bg-[#1B5D77]"></span>
+                        Make Your Clean Air Pledge
+                    </h2>
+                    <p class="text-xs text-stone-500 mt-1 mb-5">
+                        Commit to actions that reduce urban emissions and protect respiratory health in your city.
+                    </p>
+
+                    <form action="/pledge" method="POST" onsubmit="return handlePledgeSubmit(this)" class="space-y-4 text-xs">
+                        <input type="hidden" name="submission_id" id="submission_id" value="">
+                        <div>
+                            <label for="name" class="block font-medium text-stone-700 mb-1">Your Name / Organization</label>
+                            <input type="text" id="name" name="name" required placeholder="e.g., Alex Rivera" class="w-full px-3 py-2 border border-stone-300 rounded-lg text-xs focus:ring-2 focus:ring-[#1B5D77] focus:outline-none">
+                        </div>
+
+                        <div>
+                            <label for="category" class="block font-medium text-stone-700 mb-1">Action Category (Air Quality Focus)</label>
+                            <select id="category" name="category" class="w-full px-3 py-2 border border-stone-300 rounded-lg text-xs focus:ring-2 focus:ring-[#1B5D77] focus:outline-none bg-white font-medium text-stone-800">
+                                <option value="Clean Mobility & Anti-Idling">Clean Mobility & Anti-Idling (Transit, EV, Cycling, Zero-Idling)</option>
+                                <option value="Home Energy & Clean Heating">Home Energy & Clean Heating (Heat Pumps, Induction, Efficiency)</option>
+                                <option value="Zero Open Burning & Composting">Zero Open Burning & Composting (No Smoke, Yard Mulching)</option>
+                                <option value="Urban Greening & Bio-Filters">Urban Greening & Bio-Filters (Particulate Hedges, Green Walls)</option>
+                                <option value="Low-VOC & Non-Toxic Products">Low-VOC & Non-Toxic Products (Zero-VOC Paints, Eco-Cleaners)</option>
+                                <option value="Civic Clean Air Advocacy">Civic Clean Air Advocacy (School Zones, Bike Corridors, Policy)</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label for="impact" class="block font-medium text-stone-700 mb-1">Estimated Impact Tier</label>
+                            <select id="impact" name="impact" class="w-full px-3 py-2 border border-stone-300 rounded-lg text-xs focus:ring-2 focus:ring-[#1B5D77] focus:outline-none bg-white">
+                                <option value="High Impact">High Impact (Permanent structural or technology transition)</option>
+                                <option value="Medium Impact" selected>Medium Impact (Consistent weekly habit adjustment)</option>
+                                <option value="Foundational">Foundational (Community awareness & initial steps)</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label for="pledge" class="block font-medium text-stone-700 mb-1">Your Specific Clean Air Action</label>
+                            <textarea id="pledge" name="pledge" required rows="3" placeholder="e.g., Turn off vehicle engine when waiting at school pickup lines, switch to electric lawn tools, or plant particulate-filtering perimeter hedges." class="w-full px-3 py-2 border border-stone-300 rounded-lg text-xs focus:ring-2 focus:ring-[#1B5D77] focus:outline-none"></textarea>
+                        </div>
+
+                        <button type="submit" id="submit-pledge-btn" class="w-full py-2.5 px-4 bg-[#DE6738] hover:bg-[#C85528] text-white font-semibold rounded-lg shadow-sm transition text-xs flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
+                            <span id="submit-btn-text">Save Clean Air Pledge to Firestore</span>
+                            <span id="submit-btn-arrow">&rarr;</span>
+                        </button>
+                    </form>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Right Column: Live Pledges Feed -->
+            <div class="lg:col-span-2 space-y-4">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h2 class="text-base font-bold text-stone-900">Firestore Pledges Stream</h2>
+                        <p class="text-xs text-stone-500">Live database records from GCP Firestore collection <code class="text-[#1B5D77] font-mono">/pledges</code></p>
+                    </div>
+                    <span class="text-xs text-stone-400">{{ pledges|length }} documents</span>
+                </div>
+
+                {% if pledges %}
+                <div class="space-y-3">
+                    {% for p in pledges %}
+                    <div class="bg-white border border-stone-200 rounded-xl p-4 shadow-sm hover:border-[#1B5D77]/40 transition">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-stone-100">
+                            <div class="flex items-center gap-2">
+                                <span class="font-semibold text-stone-900 text-sm">{{ p.name }}</span>
+                                <span class="px-2 py-0.5 text-[11px] font-medium rounded-full bg-[#E9F2F5] text-[#1B5D77] border border-[#D4E7ED]">
+                                    {{ p.category }}
+                                </span>
+                            </div>
+                            <div class="flex items-center gap-2 text-xs">
+                                <span class="text-[11px] font-medium px-2 py-0.5 rounded
+                                    {% if p.impact == 'High Impact' %} bg-[#FDF3EE] text-[#DE6738] border border-[#FBE7DE]
+                                    {% else %} bg-stone-100 text-stone-600 border border-stone-200 {% endif %}">
+                                    {{ p.impact }}
+                                </span>
+                                <span class="text-stone-400 text-[11px]">{{ p.timestamp }}</span>
+                            </div>
+                        </div>
+                        <p class="text-xs text-stone-700 mt-3 leading-relaxed">
+                            &ldquo;{{ p.pledge }}&rdquo;
+                        </p>
+                        {% if p.id %}
+                        <div class="mt-2 pt-2 border-t border-stone-50 flex items-center justify-end">
+                            <span class="text-[10px] text-stone-400 font-mono">Doc ID: {{ p.id }}</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="bg-white border border-dashed border-stone-300 rounded-xl p-8 text-center text-stone-500 text-xs">
+                    No documents found in Firestore yet. Submit your first climate pledge above!
+                </div>
+                {% endif %}
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Branded Footer matching Google Cloud & Mentor Me Collective style -->
+    <footer class="bg-[#14475B] text-stone-200 border-t-4 border-[#DE6738] py-6 text-xs mt-12">
+        <div class="max-w-6xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left">
+            <span class="text-[11px] text-sky-200/80">
+                SDG 13 Climate Action &bull; Global Environmental Monitoring
+            </span>
+
+            <!-- Mentor Me Collective Footer Logo Badge -->
+            <div class="flex items-center shadow-md rounded-full overflow-hidden border border-white/30 bg-white px-3.5 py-1.5 sm:px-4 sm:py-2">
+                <img 
+                    src="https://storage.googleapis.com/sites_imagex/MentorMeLogo.png" 
+                    alt="Mentor Me Collective" 
+                    class="h-7 sm:h-9 w-auto object-contain"
+                    referrerpolicy="no-referrer"
+                />
+            </div>
+        </div>
+    </footer>
+
+    <!-- Google Maps Client Scripts -->
+    <script>
+        let map;
+        let activeMarker;
+        let activeInfoWindow;
+
+        function initAppMap() {
+            const rawLat = "{{ current_lat }}";
+            const rawLng = "{{ current_lng }}";
+            const defaultPos = { 
+                lat: parseFloat(rawLat) || 37.7749, 
+                lng: parseFloat(rawLng) || -122.4194 
+            };
+
+            // Initialize Google Map
+            map = new google.maps.Map(document.getElementById("map"), {
+                center: defaultPos,
+                zoom: 10,
+                mapTypeControl: false,
+                streetViewControl: false,
+                fullscreenControl: true,
+                styles: [
+                    {
+                        featureType: "administrative.country",
+                        elementType: "geometry.stroke",
+                        stylers: [{ color: "#3F7E44" }, { weight: 1 }]
+                    }
+                ]
+            });
+
+            // Initial Marker
+            activeMarker = new google.maps.Marker({
+                position: defaultPos,
+                map: map,
+                title: "Selected Location for AQI",
+                animation: google.maps.Animation.DROP
+            });
+
+            const initialLocName = "{{ aqi.location_name }}";
+            const initialAqi = "{{ aqi.aqi }}";
+            const initialCat = "{{ aqi.category }}";
+
+            activeInfoWindow = new google.maps.InfoWindow({
+                content: `<div class="p-1 font-sans text-xs"><strong>${initialLocName}</strong><br>AQI: ${initialAqi} (${initialCat})</div>`
+            });
+
+            activeMarker.addListener("click", () => {
+                activeInfoWindow.open(map, activeMarker);
+            });
+
+            // Click anywhere on map to fetch AQI
+            map.addListener("click", (e) => {
+                const clickedLat = e.latLng.lat();
+                const clickedLng = e.latLng.lng();
+                fetchLocationAQI(clickedLat, clickedLng);
+            });
+
+            // Search Input Event Listeners
+            const searchInput = document.getElementById("map-search-input");
+            if (searchInput) {
+                searchInput.addEventListener("keydown", (e) => {
+                    if (e.key === "Enter") {
+                        e.preventDefault();
+                        handleManualSearch(e);
+                    }
+                });
+            }
+
+            // Geolocation Button
+            document.getElementById("btn-geolocate").addEventListener("click", () => {
+                if (navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition(
+                        (position) => {
+                            const userLat = position.coords.latitude;
+                            const userLng = position.coords.longitude;
+                            map.setCenter({ lat: userLat, lng: userLng });
+                            map.setZoom(13);
+                            fetchLocationAQI(userLat, userLng, "Your Current Location");
+                        },
+                        () => {
+                            alert("Geolocation permission was denied or unavailable.");
+                        }
+                    );
+                } else {
+                    alert("Your browser does not support geolocation.");
+                }
+            });
+        }
+
+        // Preset Continent Registry
+        const CONTINENT_REGISTRY = {
+            'africa': { lat: 1.6508, lng: 17.6879, name: 'Africa', zoom: 3 },
+            'asia': { lat: 34.0479, lng: 100.6197, name: 'Asia', zoom: 3 },
+            'europe': { lat: 54.5260, lng: 15.2551, name: 'Europe', zoom: 3 },
+            'north america': { lat: 54.5260, lng: -105.2551, name: 'North America', zoom: 3 },
+            'south america': { lat: -8.7832, lng: -55.4915, name: 'South America', zoom: 3 },
+            'oceania': { lat: -22.7359, lng: 140.0188, name: 'Oceania', zoom: 3 },
+            'australia': { lat: -25.2744, lng: 133.7751, name: 'Australia', zoom: 4 },
+            'antarctica': { lat: -82.8628, lng: 135.0000, name: 'Antarctica', zoom: 2 }
+        };
+
+        async function handleManualSearch(e) {
+            if (e) e.preventDefault();
+            const input = document.getElementById("map-search-input");
+            const query = input.value.trim();
+            if (!query) return;
+
+            const qLower = query.toLowerCase();
+            if (CONTINENT_REGISTRY[qLower]) {
+                const c = CONTINENT_REGISTRY[qLower];
+                jumpToLocation(c.lat, c.lng, c.name, c.zoom);
+                return;
+            }
+
+            // Direct fallback to OpenStreetMap Nominatim Geocoder (Free, global, no GCP Geocoding API required)
+            fallbackSearch(query);
+        }
+
+        async function fallbackSearch(query) {
+            try {
+                const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`, {
+                    headers: { 'Accept-Language': 'en' }
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data && data.length > 0) {
+                        const lat = parseFloat(data[0].lat);
+                        const lng = parseFloat(data[0].lon);
+                        const label = data[0].display_name.split(',').slice(0, 2).join(',').trim();
+                        const rank = parseInt(data[0].place_rank || 15);
+                        let targetZoom = 11;
+                        if (rank <= 4 || data[0].type === 'continent') {
+                            targetZoom = 3;
+                        } else if (rank <= 8 || data[0].type === 'country') {
+                            targetZoom = 5;
+                        }
+                        map.setCenter({ lat, lng });
+                        map.setZoom(targetZoom);
+                        fetchLocationAQI(lat, lng, label || query);
+                        return;
+                    }
+                }
+            } catch (err) {
+                console.warn("Geocoder error:", err);
+            }
+            alert(`Could not find "${query}". Please check the spelling or try another location.`);
+        }
+
+        function jumpToLocation(lat, lng, label, zoom = 11) {
+            if (!map) return;
+            map.setCenter({ lat, lng });
+            map.setZoom(zoom);
+            fetchLocationAQI(lat, lng, label);
+        }
+
+        function zoomIn() {
+            if (!map) return;
+            map.setZoom((map.getZoom() || 10) + 1);
+        }
+
+        function zoomOut() {
+            if (!map) return;
+            map.setZoom(Math.max((map.getZoom() || 10) - 1, 1));
+        }
+
+        function updateFromInputs() {
+            const lat = parseFloat(document.getElementById("input-lat").value);
+            const lng = parseFloat(document.getElementById("input-lng").value);
+            if (!isNaN(lat) && !isNaN(lng)) {
+                map.setCenter({ lat, lng });
+                fetchLocationAQI(lat, lng);
+            }
+        }
+
+        async function fetchLocationAQI(lat, lng, customLabel = null) {
+            // Update input fields
+            document.getElementById("input-lat").value = lat.toFixed(4);
+            document.getElementById("input-lng").value = lng.toFixed(4);
+
+            // Move Marker
+            const pos = { lat: lat, lng: lng };
+            activeMarker.setPosition(pos);
+
+            // Loading indicator
+            const loadingSpan = document.getElementById("badge-status-loading");
+            if (loadingSpan) loadingSpan.classList.remove("hidden");
+
+            try {
+                const response = await fetch(`/api/aqi?lat=${lat}&lng=${lng}`);
+                const data = await response.json();
+
+                const locName = customLabel || data.location_name || `Lat: ${lat.toFixed(2)}, Lng: ${lng.toFixed(2)}`;
+
+                // Update floating badge
+                document.getElementById("badge-location-name").textContent = locName;
+                document.getElementById("badge-aqi-val").textContent = data.aqi;
+                document.getElementById("badge-recommendation").textContent = data.health_recommendation;
+                document.getElementById("badge-pollutant").textContent = data.dominant_pollutant;
+
+                // Update summary card
+                document.getElementById("summary-location-label").textContent = locName;
+                document.getElementById("summary-aqi-num").textContent = data.aqi;
+                document.getElementById("summary-category-text").textContent = data.category;
+                document.getElementById("summary-pollutant-text").textContent = data.dominant_pollutant;
+                document.getElementById("summary-rec-text").textContent = data.health_recommendation;
+                document.getElementById("summary-status-msg").textContent = data.status_message;
+
+                // Style Category Badge & InfoWindow text color
+                const pill = document.getElementById("summary-category-pill");
+                const badgePill = document.getElementById("badge-aqi-pill");
+                
+                const catLower = (data.category || '').toLowerCase();
+                const isGood = catLower.includes('good') || catLower.includes('excellent');
+                const isUnhealthy = (catLower.includes('unhealthy') || catLower.includes('poor') || catLower.includes('hazard')) && !isGood;
+                const isModerate = !isGood && !isUnhealthy;
+                
+                let pillClass = "bg-emerald-100 text-emerald-800 border-emerald-300";
+                let textColClass = "text-emerald-700";
+                if (isUnhealthy) {
+                    pillClass = "bg-rose-100 text-rose-800 border-rose-300";
+                    textColClass = "text-rose-700";
+                } else if (isModerate) {
+                    pillClass = "bg-amber-100 text-amber-800 border-amber-300";
+                    textColClass = "text-amber-700";
+                }
+                
+                if (pill) pill.className = `inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border ${pillClass}`;
+                if (badgePill) badgePill.className = `px-2 py-0.5 rounded-full text-[10px] font-bold border ${pillClass}`;
+
+                // Update Dynamic AQI Advisory Box
+                updateDynamicAdvisory(data.category, data.aqi, locName, data.ai_advisory, data.dominant_pollutant);
+
+                // Update InfoWindow
+                activeInfoWindow.setContent(`
+                    <div class="p-1 font-sans text-xs">
+                        <strong class="text-stone-900">${locName}</strong><br>
+                        <span class="font-semibold ${textColClass}">AQI: ${data.aqi}</span> (${data.category})<br>
+                        <span class="text-stone-500 text-[10px] font-medium">${data.dominant_pollutant}</span>
+                    </div>
+                `);
+                activeInfoWindow.open(map, activeMarker);
+
+            } catch (err) {
+                console.error("AQI fetch error:", err);
+            } finally {
+                if (loadingSpan) loadingSpan.classList.add("hidden");
+            }
+        }
+
+        // --- Clean Air Toolkit JavaScript Handlers ---
+        let activeCompletedActions = new Set();
+
+        function filterToolkit(category) {
+            const allCards = document.querySelectorAll('.action-card');
+            const tabButtons = {
+                all: document.getElementById('tab-btn-all'),
+                mobility: document.getElementById('tab-btn-mobility'),
+                household: document.getElementById('tab-btn-household'),
+                nature: document.getElementById('tab-btn-nature'),
+                civic: document.getElementById('tab-btn-civic')
+            };
+
+            // Reset tab styles
+            Object.values(tabButtons).forEach(btn => {
+                if (btn) {
+                    btn.className = "px-3 py-1.5 rounded-lg text-xs font-semibold bg-stone-100 text-stone-700 hover:bg-stone-200 border border-stone-200 transition cursor-pointer";
+                }
+            });
+
+            if (tabButtons[category]) {
+                tabButtons[category].className = "px-3 py-1.5 rounded-lg text-xs font-semibold bg-stone-900 text-white shadow-sm transition cursor-pointer";
+            }
+
+            allCards.forEach(card => {
+                if (category === 'all' || card.classList.contains(`toolkit-${category}`)) {
+                    card.classList.remove('hidden');
+                } else {
+                    card.classList.add('hidden');
+                }
+            });
+        }
+
+        function toggleToolkitPractice(id, isChecked) {
+            if (isChecked) {
+                activeCompletedActions.add(id);
+            } else {
+                activeCompletedActions.delete(id);
+            }
+            updateScoreMeter();
+        }
+
+        function updateScoreMeter() {
+            const count = activeCompletedActions.size;
+            const pct = Math.round((count / 12) * 100);
+            const valElem = document.getElementById('clean-air-score-val');
+            const barElem = document.getElementById('clean-air-progress-bar');
+            if (valElem) valElem.textContent = `${count}/12 (${pct}%)`;
+            if (barElem) barElem.style.width = `${pct}%`;
+        }
+
+        function generateSubmissionId() {
+            return Date.now().toString(36) + '_' + Math.random().toString(36).substring(2, 9);
+        }
+
+        // Initialize submission ID on load
+        document.addEventListener("DOMContentLoaded", () => {
+            const subInput = document.getElementById("submission_id");
+            if (subInput && !subInput.value) {
+                subInput.value = generateSubmissionId();
+            }
+        });
+
+        function handlePledgeSubmit(form) {
+            const btn = document.getElementById("submit-pledge-btn");
+            const btnText = document.getElementById("submit-btn-text");
+            const subInput = document.getElementById("submission_id");
+
+            if (!subInput.value) {
+                subInput.value = generateSubmissionId();
+            }
+
+            if (btn) {
+                btn.disabled = true;
+                if (btnText) btnText.textContent = "Saving to Google Cloud Firestore...";
+            }
+            return true;
+        }
+
+        function populatePledgeForm(category, impact, text) {
+            const catSelect = document.getElementById('category');
+            const impactSelect = document.getElementById('impact');
+            const pledgeArea = document.getElementById('pledge');
+            const nameInput = document.getElementById('name');
+
+            if (catSelect) catSelect.value = category;
+            if (impactSelect) impactSelect.value = impact;
+            if (pledgeArea) pledgeArea.value = text;
+
+            if (nameInput) {
+                nameInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                nameInput.focus();
+            }
+        }
+
+        function switchAiPerspective(tab) {
+            const tabs = ['overview', 'health', 'transit', 'indoor'];
+            tabs.forEach(t => {
+                const btn = document.getElementById(`tab-ai-${t}`);
+                const view = document.getElementById(`ai-tab-view-${t}`);
+                if (btn) {
+                    if (t === tab) {
+                        btn.className = "px-2.5 py-1 rounded-md font-medium transition cursor-pointer bg-[#1B5D77] text-white shadow-2xs";
+                    } else {
+                        btn.className = "px-2.5 py-1 rounded-md font-medium transition cursor-pointer text-stone-600 hover:text-stone-900";
+                    }
+                }
+                if (view) {
+                    if (t === tab) {
+                        view.classList.remove('hidden');
+                    } else {
+                        view.classList.add('hidden');
+                    }
+                }
+            });
+        }
+
+        async function updateDynamicAdvisory(category, aqi, locationName, aiAdvisory, pollutant) {
+            const box = document.getElementById('ai-climate-advisory-card') || document.getElementById('dynamic-advisory-box');
+            const badge = document.getElementById('advisory-badge');
+            const aqiVal = document.getElementById('advisory-aqi-val');
+            const aqiCat = document.getElementById('advisory-aqi-cat');
+            const headline = document.getElementById('advisory-headline');
+            const aiSummary = document.getElementById('advisory-ai-summary');
+            const tabHealthText = document.getElementById('advisory-tab-health-text');
+            const tabTransitText = document.getElementById('advisory-tab-transit-text');
+            const tabIndoorText = document.getElementById('advisory-tab-indoor-text');
+            const outdoor = document.getElementById('advisory-outdoor');
+            const indoor = document.getElementById('advisory-indoor');
+            const commute = document.getElementById('advisory-commute');
+            const action = document.getElementById('advisory-action');
+            const sourceText = document.getElementById('advisory-source-text');
+            const locationLabel = document.getElementById('advisory-location-label');
+
+            if (!box) return;
+
+            if (aqiVal) aqiVal.textContent = aqi;
+            if (aqiCat) aqiCat.textContent = category;
+            if (locationLabel) locationLabel.textContent = locationName;
+
+            const catLower = (category || '').toLowerCase();
+            const isGood = catLower.includes('good') || catLower.includes('excellent') || (Number(aqi) <= 50 && !catLower.includes('moderate') && !catLower.includes('unhealthy'));
+            const isUnhealthy = (catLower.includes('unhealthy') || catLower.includes('poor') || catLower.includes('hazard') || Number(aqi) > 100) && !isGood;
+            const isModerate = !isGood && !isUnhealthy;
+
+            if (isUnhealthy) {
+                box.className = "rounded-xl border p-5 sm:p-6 shadow-sm transition-all duration-300 border-rose-300 bg-gradient-to-br from-rose-50/95 via-orange-50/50 to-white text-rose-950";
+                if (badge) {
+                    badge.className = "px-2.5 py-0.5 rounded-full text-xs font-bold border uppercase tracking-wider bg-rose-100 text-rose-800 border-rose-300";
+                    badge.textContent = "High Pollution Alert";
+                }
+            } else if (isModerate) {
+                box.className = "rounded-xl border p-5 sm:p-6 shadow-sm transition-all duration-300 border-amber-300 bg-gradient-to-br from-amber-50/95 via-orange-50/40 to-white text-amber-950";
+                if (badge) {
+                    badge.className = "px-2.5 py-0.5 rounded-full text-xs font-bold border uppercase tracking-wider bg-amber-100 text-amber-800 border-amber-300";
+                    badge.textContent = "Moderate Air Quality";
+                }
+            } else {
+                box.className = "rounded-xl border p-5 sm:p-6 shadow-sm transition-all duration-300 border-emerald-300 bg-gradient-to-br from-emerald-50/95 via-teal-50/50 to-white text-emerald-950";
+                if (badge) {
+                    badge.className = "px-2.5 py-0.5 rounded-full text-xs font-bold border uppercase tracking-wider bg-emerald-100 text-emerald-800 border-emerald-300";
+                    badge.textContent = "Optimal Clean Air Day";
+                }
+            }
+
+            // Apply AI Advisory fields if passed from backend
+            if (aiAdvisory) {
+                if (headline && aiAdvisory.headline) headline.textContent = aiAdvisory.headline;
+                if (aiSummary && (aiAdvisory.aiSummary || aiAdvisory.summary)) {
+                    aiSummary.textContent = aiAdvisory.aiSummary || aiAdvisory.summary;
+                }
+                if (tabHealthText && aiAdvisory.outdoor) tabHealthText.textContent = aiAdvisory.outdoor;
+                if (tabTransitText && aiAdvisory.commute) tabTransitText.textContent = aiAdvisory.commute;
+                if (tabIndoorText && aiAdvisory.indoor) tabIndoorText.textContent = aiAdvisory.indoor;
+
+                if (outdoor && (aiAdvisory.outdoor || aiAdvisory.outdoorAdvice)) outdoor.textContent = aiAdvisory.outdoor || aiAdvisory.outdoorAdvice;
+                if (indoor && (aiAdvisory.indoor || aiAdvisory.indoorAdvice)) indoor.textContent = aiAdvisory.indoor || aiAdvisory.indoorAdvice;
+                if (commute && (aiAdvisory.commute || aiAdvisory.commuteAdvice)) commute.textContent = aiAdvisory.commute || aiAdvisory.commuteAdvice;
+                if (action && (aiAdvisory.action || aiAdvisory.actionRecommendation)) action.textContent = aiAdvisory.action || aiAdvisory.actionRecommendation;
+                if (sourceText && aiAdvisory.source) sourceText.textContent = `Engine: ${aiAdvisory.source}`;
+                return;
+            }
+
+            // Fallback: On-demand fetch if missing
+            try {
+                const res = await fetch('/api/gemini/recommendations', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        locationName: locationName,
+                        aqiValue: aqi,
+                        aqiCategory: category,
+                        dominantPollutant: pollutant || "PM2.5"
+                    })
+                });
+                if (res.ok) {
+                    const json = await res.json();
+                    if (json.success && json.data) {
+                        const data = json.data;
+                        if (headline && data.headline) headline.textContent = data.headline;
+                        if (aiSummary && (data.aiSummary || data.summary)) aiSummary.textContent = data.aiSummary || data.summary;
+                        if (tabHealthText && data.outdoor) tabHealthText.textContent = data.outdoor;
+                        if (tabTransitText && data.commute) tabTransitText.textContent = data.commute;
+                        if (tabIndoorText && data.indoor) tabIndoorText.textContent = data.indoor;
+
+                        if (outdoor && (data.outdoor || data.outdoorAdvice)) outdoor.textContent = data.outdoor || data.outdoorAdvice;
+                        if (indoor && (data.indoor || data.indoorAdvice)) indoor.textContent = data.indoor || data.indoorAdvice;
+                        if (commute && (data.commute || data.commuteAdvice)) commute.textContent = data.commute || data.commuteAdvice;
+                        if (action && (data.action || data.actionRecommendation)) action.textContent = data.action || data.actionRecommendation;
+                        if (sourceText && data.source) sourceText.textContent = `Engine: ${data.source}`;
+                    }
+                }
+            } catch (e) {
+                console.log("[Gemini Client Advisory]", e);
+            }
+        }
+    </script>
+
+    <!-- Load Google Maps JavaScript API with user's key -->
+    <script async defer src="https://maps.googleapis.com/maps/api/js?key={{ maps_api_key }}&callback=initAppMap"></script>
+</body>
+</html>

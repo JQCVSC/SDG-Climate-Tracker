@@ -31,6 +31,7 @@ import {
 import { CleanAirActionToolkit } from './components/CleanAirActionToolkit';
 import { CleanAirRec, getCommunityActionAnalysis } from './cleanAirData';
 import { CommunityActionAnalysisCard } from './components/CommunityActionAnalysisCard';
+import { NewsAgentCard } from './components/NewsAgentCard';
 
 const GOOGLE_MAPS_KEY = process.env.GOOGLE_MAPS_PLATFORM_KEY || '';
 
@@ -2682,6 +2683,13 @@ export default function App() {
                   </div>
                 </div>
               </section>
+
+              {/* Live AI News & Incident Grounding Agent Card */}
+              <NewsAgentCard
+                locationName={locationName}
+                aqiValue={aqiValue}
+                dominantPollutant={dominantPollutant}
+              />
 
               {/* City Clean Air Action Toolkit & Dynamic Advisory */}
               <CleanAirActionToolkit

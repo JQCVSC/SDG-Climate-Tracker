@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SDG 13 Climate Tracker - Clean Air & Climate Action Platform</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+    </style>
+</head>
+<body class="min-h-full bg-stone-50 text-stone-900 flex flex-col selection:bg-emerald-500 selection:text-white">
+    <!-- Header -->
+    <header class="bg-white border-b border-stone-200 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-xl bg-emerald-600 flex items-center justify-center text-white font-black shadow-sm text-lg">
+                    13
+                </div>
+                <div>
+                    <h1 class="font-bold text-base sm:text-lg text-stone-900 tracking-tight flex items-center gap-2">
+                        SDG 13 Climate Tracker
+                        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-300">
+                            Live GCP Cloud Run
+                        </span>
+                    </h1>
+                    <p class="text-xs text-stone-500">Real-Time Air Quality Telemetry & Community Climate Action Pledges</p>
+                </div>
+            </div>
+            
+            <div class="flex items-center space-x-3 text-xs">
+                <div class="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-stone-100 border border-stone-200 text-stone-700 font-medium">
+                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                    <span>{{ db_status }}</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+        
+        <!-- Flash Analysis if Pledge Submitted -->
+        {% if submitted_pledge and ai_analysis %}
+        <section class="bg-gradient-to-br from-emerald-900 via-teal-900 to-stone-900 text-white rounded-2xl p-6 shadow-xl border border-emerald-700/50 relative overflow-hidden">
+            <div class="absolute -right-10 -bottom-10 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
+            <div class="relative z-10 space-y-4">
+                <div class="flex flex-wrap items-center justify-between gap-2 pb-4 border-b border-white/15">
+                    <div class="flex items-center space-x-3">
+                        <span class="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-emerald-400 text-emerald-950 font-mono">
+                            {{ submitted_pledge.impact }}
+                        </span>
+                        <h3 class="font-bold text-lg text-white">Pledge Successfully Logged & Analyzed by Gemini AI</h3>
+                    </div>
+                    <span class="text-xs text-emerald-300 font-mono bg-black/30 px-3 py-1 rounded-lg border border-white/10">
+                        {{ ai_analysis.source }}
+                    </span>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="bg-white/10 backdrop-blur-md p-4 rounded-xl border border-white/10 space-y-2">
+                        <span class="text-xs font-bold text-emerald-300 uppercase tracking-wider">Changemaker</span>
+                        <h4 class="font-bold text-white text-base">{{ submitted_pledge.name }}</h4>
+                        <p class="text-xs text-stone-200 font-mono">Category: <span class="text-emerald-300">{{ submitted_pledge.category }}</span></p>
+                    </div>
+                    <div class="bg-white/10 backdrop-blur-md p-4 rounded-xl border border-white/10 space-y-2 md:col-span-2">
+                        <span class="text-xs font-bold text-emerald-300 uppercase tracking-wider">Commitment Statement</span>
+                        <p class="text-sm text-stone-100 italic font-medium">&ldquo;{{ submitted_pledge.pledge }}&rdquo;</p>
+                    </div>
+                </div>
+
+                <div class="p-4 rounded-xl bg-black/30 border border-white/10 space-y-3">
+                    <div class="flex items-center gap-2 text-emerald-300 font-bold text-xs uppercase tracking-wider">
+                        <span>✦ AI Action Roadmap & Impact Assessment</span>
+                    </div>
+                    <p class="text-xs text-stone-200 leading-relaxed">{{ ai_analysis.summaryAnalysis }}</p>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs pt-2">
+                        <div class="p-3 rounded-lg bg-white/5 border border-white/10">
+                            <strong class="text-emerald-400 block mb-1">Step 1 (Today):</strong>
+                            <span class="text-stone-300 leading-relaxed">{{ ai_analysis.step1 }}</span>
+                        </div>
+                        <div class="p-3 rounded-lg bg-white/5 border border-white/10">
+                            <strong class="text-emerald-400 block mb-1">Step 2 (This Week):</strong>
+                            <span class="text-stone-300 leading-relaxed">{{ ai_analysis.step2 }}</span>
+                        </div>
+                        <div class="p-3 rounded-lg bg-white/5 border border-white/10">
+                            <strong class="text-emerald-400 block mb-1">Step 3 (Month 1+):</strong>
+                            <span class="text-stone-300 leading-relaxed">{{ ai_analysis.step3 }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        {% endif %}
+
+        {/* Dashboard Grid */}
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            
+            {/* Left Column: Metrics & Pledge Form */}
+            <div class="lg:col-span-1 space-y-6">
+                <!-- Stats Summary -->
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="bg-white p-5 rounded-2xl border border-stone-200 shadow-sm space-y-1">
+                        <span class="text-xs font-bold text-stone-500 uppercase tracking-wider">Total Pledges</span>
+                        <div class="text-3xl font-extrabold text-stone-900 font-mono">{{ total_pledges }}</div>
+                        <p class="text-[11px] text-emerald-600 font-medium">Active Community Actions</p>
+                    </div>
+                    <div class="bg-white p-5 rounded-2xl border border-stone-200 shadow-sm space-y-1">
+                        <span class="text-xs font-bold text-stone-500 uppercase tracking-wider">High Impact</span>
+                        <div class="text-3xl font-extrabold text-emerald-700 font-mono">{{ high_impact_pledges }}</div>
+                        <p class="text-[11px] text-stone-500 font-medium">Systemic Initiatives</p>
+                    </div>
+                </div>
+
+                {/* Submit Pledge Card */}
+                <div class="bg-white rounded-2xl border border-stone-200 p-6 shadow-sm space-y-5">
+                    <div>
+                        <h3 class="font-bold text-base text-stone-900 flex items-center gap-2">
+                            <span>🌱</span> Submit Your Climate Pledge
+                        </h3>
+                        <p class="text-xs text-stone-500 mt-1">Make an actionable commitment toward SDG 13 Climate Action & Clean Air.</p>
+                    </div>
+
+                    <form action="/pledge" method="POST" class="space-y-4">
+                        <input type="hidden" name="lat" value="{{ current_lat }}">
+                        <input type="hidden" name="lng" value="{{ current_lng }}">
+                        <input type="hidden" name="submission_id" id="submission-id-input" value="">
+
+                        <div class="space-y-1.5">
+                            <label class="block text-xs font-bold text-stone-700">Your Name / Organization</label>
+                            <input type="text" name="name" required placeholder="e.g. Dr. Elena Vance" class="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 text-xs text-stone-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent">
+                        </div>
+
+                        <div class="space-y-1.5">
+                            <label class="block text-xs font-bold text-stone-700">Action Category</label>
+                            <select name="category" class="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 text-xs text-stone-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white">
+                                <option value="Clean Mobility & Anti-Idling">Clean Mobility & Anti-Idling</option>
+                                <option value="Indoor Air & Energy Efficiency">Indoor Air & Energy Efficiency</option>
+                                <option value="Urban Canopy & Green Spaces">Urban Canopy & Green Spaces</option>
+                                <option value="Industrial Emissions & Monitoring">Industrial Emissions & Monitoring</option>
+                                <option value="School & Community Transit">School & Community Transit</option>
+                            </select>
+                        </div>
+
+                        <div class="space-y-1.5">
+                            <label class="block text-xs font-bold text-stone-700">Impact Tier</label>
+                            <select name="impact" class="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 text-xs text-stone-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white">
+                                <option value="High Impact">High Impact (Systemic / Institutional)</option>
+                                <option value="Medium Impact">Medium Impact (Neighborhood / Community)</option>
+                                <option value="Foundational">Foundational (Personal / Household)</option>
+                            </select>
+                        </div>
+
+                        <div class="space-y-1.5">
+                            <label class="block text-xs font-bold text-stone-700">Pledge Commitment</label>
+                            <textarea name="pledge" rows="3" required placeholder="Describe your specific action..." class="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 text-xs text-stone-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent resize-none"></textarea>
+                        </div>
+
+                        <button type="submit" class="w-full py-3 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition shadow-sm cursor-pointer flex items-center justify-center gap-2">
+                            <span>Submit Pledge & Generate AI Roadmap</span>
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            {/* Right Column: AQI Telemetry, Map & Pledges Feed */}
+            <div class="lg:col-span-2 space-y-6">
+                <!-- Dynamic AQI Advisory Card -->
+                <section class="rounded-2xl border p-6 shadow-sm transition-all duration-300 border-emerald-200 bg-emerald-50/70 text-emerald-950 space-y-4">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-black/10">
+                        <div class="flex items-center space-x-2">
+                            <span class="px-3 py-1 rounded-full text-xs font-bold border uppercase tracking-wider bg-emerald-200/80 text-emerald-900 border-emerald-300">
+                                {{ aqi.category }}
+                            </span>
+                            <span class="text-xs font-semibold opacity-80">Localized Recommendations</span>
+                        </div>
+                        <span class="text-xs font-mono font-medium">
+                            Active AQI: <strong class="text-sm font-bold">{{ aqi.aqi }}</strong> (<span class="uppercase">{{ aqi.dominant_pollutant }}</span>)
+                        </span>
+                    </div>
+
+                    <h3 class="text-base sm:text-lg font-bold text-stone-900 leading-snug">
+                        {{ ai_advisory.headline }}
+                    </h3>
+
+                    <p class="text-xs text-stone-700 leading-relaxed bg-white/70 p-3.5 rounded-xl border border-black/5">
+                        {{ ai_advisory.aiSummary }}
+                    </p>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                        <div class="bg-white/80 p-3.5 rounded-xl border border-black/5 space-y-1">
+                            <span class="font-bold text-stone-900 flex items-center gap-1.5">
+                                <span class="text-emerald-700">▶</span> Outdoor Activity
+                            </span>
+                            <p class="text-stone-700 leading-relaxed">{{ ai_advisory.outdoor }}</p>
+                        </div>
+                        <div class="bg-white/80 p-3.5 rounded-xl border border-black/5 space-y-1">
+                            <span class="font-bold text-stone-900 flex items-center gap-1.5">
+                                <span class="text-blue-700">▶</span> Indoor Air & Windows
+                            </span>
+                            <p class="text-stone-700 leading-relaxed">{{ ai_advisory.indoor }}</p>
+                        </div>
+                        <div class="bg-white/80 p-3.5 rounded-xl border border-black/5 space-y-1">
+                            <span class="font-bold text-stone-900 flex items-center gap-1.5">
+                                <span class="text-indigo-700">▶</span> Commute Choice
+                            </span>
+                            <p class="text-stone-700 leading-relaxed">{{ ai_advisory.commute }}</p>
+                        </div>
+                        <div class="bg-white/80 p-3.5 rounded-xl border border-black/5 space-y-1">
+                            <span class="font-bold text-stone-900 flex items-center gap-1.5">
+                                <span class="text-purple-700">▶</span> Direct Action
+                            </span>
+                            <p class="text-stone-700 leading-relaxed">{{ ai_advisory.action }}</p>
+                        </div>
+                    </div>
+                </section>
+
+                {/* Community Pledges Feed */}
+                <section class="bg-white rounded-2xl border border-stone-200 p-6 shadow-sm space-y-4">
+                    <div class="flex items-center justify-between pb-4 border-b border-stone-100">
+                        <div>
+                            <h3 class="font-bold text-base text-stone-900">Community Climate Action Feed</h3>
+                            <p class="text-xs text-stone-500">Live submissions recorded in Google Cloud Firestore</p>
+                        </div>
+                        <span class="text-xs font-mono font-semibold px-2.5 py-1 bg-stone-100 rounded-lg text-stone-700">
+                            {{ pledges | length }} Records
+                        </span>
+                    </div>
+
+                    <div class="space-y-3 max-h-[500px] overflow-y-auto pr-1">
+                        {% if pledges %}
+                            {% for p in pledges %}
+                            <div class="p-4 rounded-xl bg-stone-50 border border-stone-200 hover:border-emerald-300 transition space-y-2 text-xs">
+                                <div class="flex flex-wrap items-center justify-between gap-2">
+                                    <div class="flex items-center gap-2">
+                                        <span class="font-bold text-stone-900 text-sm">{{ p.name }}</span>
+                                        <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider {% if p.impact == 'High Impact' %}bg-purple-100 text-purple-800 border border-purple-200{% elif p.impact == 'Medium Impact' %}bg-amber-100 text-amber-800 border border-amber-200{% else %}bg-emerald-100 text-emerald-800 border border-emerald-200{% endif %}">
+                                            {{ p.impact }}
+                                        </span>
+                                    </div>
+                                    <span class="text-stone-400 font-mono text-[11px]">{{ p.timestamp }}</span>
+                                </div>
+                                <p class="text-stone-700 leading-relaxed font-medium">&ldquo;{{ p.pledge }}&rdquo;</p>
+                                <div class="flex items-center justify-between pt-2 border-t border-stone-200/60 text-[11px] text-stone-500 font-mono">
+                                    <span>Category: <strong class="text-stone-700">{{ p.category }}</strong></span>
+                                    <span class="text-emerald-700 font-medium">✓ Verified GCP Firestore Record</span>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="text-center py-12 text-stone-400 space-y-2">
+                                <p class="text-sm font-medium">No climate action pledges recorded yet.</p>
+                                <p class="text-xs">Be the first changemaker to submit a pledge using the form on the left!</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </section>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-stone-900 text-stone-400 py-6 border-t border-stone-800 mt-12 text-xs">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <p>SDG 13 Climate Tracker &bull; Powered by Google Cloud Run, Firestore & Gemini AI</p>
+            <p class="font-mono text-[11px]">Environment: Production Ready</p>
+        </div>
+    </footer>
+
+    <script>
+        // Generate unique submission ID to prevent double-submit duplication
+        document.getElementById('submission-id-input').value = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+    </script>
+</body>
+</html>

@@ -3,11 +3,29 @@ import path from 'path';
 import fs from 'fs';
 import { createServer as createViteServer } from 'vite';
 import { GoogleGenAI } from '@google/genai';
+import { Firestore, FieldValue } from '@google-cloud/firestore';
 
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
 
 app.use(express.json());
+
+// Lazy-initialize Firestore client for GCP project "sdg13-climate-tracker" and database "(default)"
+let firestoreClient: Firestore | null = null;
+function getFirestoreDb(): Firestore | null {
+  if (!firestoreClient) {
+    try {
+      firestoreClient = new Firestore({
+        projectId: process.env.GOOGLE_CLOUD_PROJECT || 'sdg13-climate-tracker',
+        databaseId: '(default)'
+      });
+    } catch (e) {
+      console.warn('Firestore initialization notice:', e);
+      firestoreClient = null;
+    }
+  }
+  return firestoreClient;
+}
 
 // Lazy-initialize Gemini AI client
 function getGeminiClient(): GoogleGenAI | null {
@@ -269,6 +287,58 @@ Return JSON:
 // Health check
 app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+// GET /api/pledges - Fetch all pledges from Firestore database "(default)" collection "pledges"
+app.get('/api/pledges', async (_req, res) => {
+  try {
+    const db = getFirestoreDb();
+    if (db) {
+      const snapshot = await db.collection('pledges').orderBy('created_at', 'desc').get();
+      const pledges: any[] = [];
+      snapshot.forEach(doc => {
+        pledges.push({ id: doc.id, ...doc.data() });
+      });
+      return res.json({ success: true, pledges, source: 'GCP Firestore (default)' });
+    }
+  } catch (err: any) {
+    if (err?.code === 7 || (err?.message || '').includes('PERMISSION_DENIED')) {
+      console.warn('Firestore Permission Denied. Please ensure Firestore Security Rules allow read/write access (e.g. Test Mode allow read, write: if true;) in project sdg13-climate-tracker.');
+    } else {
+      console.error('Error fetching pledges from Firestore:', err);
+    }
+  }
+  return res.json({ success: true, pledges: [], source: 'Fallback' });
+});
+
+// POST /api/pledges - Save a new pledge to Firestore database "(default)" collection "pledges"
+app.post('/api/pledges', async (req, res) => {
+  try {
+    const pledgeData = req.body;
+    const db = getFirestoreDb();
+    if (db) {
+      // Reference the "pledges" collection (official GCP pattern)
+      const pledgesCollection = db.collection('pledges');
+      const payload = {
+        name: pledgeData.name || 'Anonymous Changemaker',
+        category: pledgeData.category || 'Clean Mobility & Anti-Idling',
+        pledge: pledgeData.pledge || '',
+        impact: pledgeData.impact || 'Medium Impact',
+        timestamp: pledgeData.timestamp || new Date().toISOString().replace('T', ' ').substring(0, 16) + ' UTC',
+        created_at: FieldValue.serverTimestamp()
+      };
+      const docRef = await pledgesCollection.add(payload);
+      return res.json({ success: true, id: docRef.id, data: payload });
+    }
+  } catch (err: any) {
+    if (err?.code === 7 || (err?.message || '').includes('PERMISSION_DENIED')) {
+      console.warn('Firestore Permission Denied on save. Please check Firestore Security Rules in project sdg13-climate-tracker.');
+    } else {
+      console.error('Error saving pledge to Firestore:', err);
+    }
+    return res.status(500).json({ success: false, error: 'Firestore permission denied or failed to save: ' + (err as any)?.message });
+  }
+  return res.status(500).json({ success: false, error: 'Firestore database not initialized' });
 });
 
 // -----------------------------------------------------------------------------

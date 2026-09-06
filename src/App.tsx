@@ -2005,6 +2005,18 @@ export default function App() {
     ];
   });
 
+  // Fetch pledges from Firestore via /api/pledges on mount
+  useEffect(() => {
+    fetch('/api/pledges')
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && Array.isArray(data.pledges) && data.pledges.length > 0) {
+          setPledges(data.pledges);
+        }
+      })
+      .catch(err => console.warn('Could not fetch remote pledges, using local state:', err));
+  }, []);
+
   useEffect(() => {
     try {
       localStorage.setItem('sdg13_climate_pledges', JSON.stringify(pledges));
@@ -2139,7 +2151,7 @@ export default function App() {
     document.body.removeChild(element);
   };
 
-  const handleAddPledge = (e: React.FormEvent) => {
+  const handleAddPledge = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formPledge.trim()) return;
 
@@ -2159,6 +2171,17 @@ export default function App() {
     try {
       localStorage.removeItem('pledge_form_draft');
     } catch (e) {}
+
+    // Persist to GCP Firestore backend
+    try {
+      await fetch('/api/pledges', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newPledge)
+      });
+    } catch (err) {
+      console.warn('Failed to sync pledge to Firestore backend:', err);
+    }
   };
 
   // Helper to update AQI calculation based on coordinates

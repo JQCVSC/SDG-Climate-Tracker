@@ -2013,10 +2013,58 @@ export default function App() {
     }
   }, [pledges]);
 
-  const [formName, setFormName] = useState('');
-  const [formCategory, setFormCategory] = useState('Clean Mobility & Anti-Idling');
-  const [formImpact, setFormImpact] = useState('Medium Impact');
-  const [formPledge, setFormPledge] = useState('');
+  // Load form draft from localStorage on mount
+  const [formName, setFormName] = useState(() => {
+    try {
+      const saved = localStorage.getItem('pledge_form_draft');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        return parsed.name || '';
+      }
+    } catch (e) {}
+    return '';
+  });
+  const [formCategory, setFormCategory] = useState(() => {
+    try {
+      const saved = localStorage.getItem('pledge_form_draft');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        return parsed.category || 'Clean Mobility & Anti-Idling';
+      }
+    } catch (e) {}
+    return 'Clean Mobility & Anti-Idling';
+  });
+  const [formImpact, setFormImpact] = useState(() => {
+    try {
+      const saved = localStorage.getItem('pledge_form_draft');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        return parsed.impact || 'Medium Impact';
+      }
+    } catch (e) {}
+    return 'Medium Impact';
+  });
+  const [formPledge, setFormPledge] = useState(() => {
+    try {
+      const saved = localStorage.getItem('pledge_form_draft');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        return parsed.pledge || '';
+      }
+    } catch (e) {}
+    return '';
+  });
+
+  // Save form draft to localStorage whenever form fields change
+  useEffect(() => {
+    try {
+      const draft = { name: formName, category: formCategory, impact: formImpact, pledge: formPledge };
+      localStorage.setItem('pledge_form_draft', JSON.stringify(draft));
+    } catch (e) {
+      console.error('Error saving form draft:', e);
+    }
+  }, [formName, formCategory, formImpact, formPledge]);
+
   const [completedActionIds, setCompletedActionIds] = useState<string[]>([]);
   const [submittedPledge, setSubmittedPledge] = useState<PledgeItem | null>(null);
 
@@ -2108,6 +2156,9 @@ export default function App() {
     setSubmittedPledge(newPledge);
     setFormPledge('');
     setFormName('');
+    try {
+      localStorage.removeItem('pledge_form_draft');
+    } catch (e) {}
   };
 
   // Helper to update AQI calculation based on coordinates

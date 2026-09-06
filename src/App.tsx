@@ -1972,8 +1972,46 @@ export default function App() {
   const [selectedSuggestionIndex, setSelectedSuggestionIndex] = useState(-1);
   const searchContainerRef = useRef<HTMLDivElement>(null);
 
-  // Firestore pledges list
-  const [pledges, setPledges] = useState<PledgeItem[]>([]);
+  // Firestore & LocalStorage pledges list with persistent persistence across refreshes
+  const [pledges, setPledges] = useState<PledgeItem[]>(() => {
+    try {
+      const saved = localStorage.getItem('sdg13_climate_pledges');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed;
+        }
+      }
+    } catch (e) {
+      console.error('Error loading pledges from localStorage:', e);
+    }
+    return [
+      {
+        id: 'doc-7x92kf',
+        name: 'Elena Rostova',
+        category: 'Home Energy & Clean Heating',
+        pledge: 'Transition household heating to high-efficiency heat pumps and install HEPA filtration in all bedrooms.',
+        impact: 'High Impact',
+        timestamp: '2026-09-06 10:30 UTC'
+      },
+      {
+        id: 'doc-4m81q2',
+        name: 'Marcus Vance',
+        category: 'Clean Mobility & Anti-Idling',
+        pledge: 'Commit to zero vehicle idling at school drop-off zones and commute by electric bicycle 3 days per week.',
+        impact: 'Medium Impact',
+        timestamp: '2026-09-06 09:15 UTC'
+      }
+    ];
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('sdg13_climate_pledges', JSON.stringify(pledges));
+    } catch (e) {
+      console.error('Error saving pledges to localStorage:', e);
+    }
+  }, [pledges]);
 
   const [formName, setFormName] = useState('');
   const [formCategory, setFormCategory] = useState('Clean Mobility & Anti-Idling');

@@ -27,6 +27,7 @@ COPY --from=builder /app/dist ./dist
 
 # Cloud Run injects PORT (default 3000)
 ENV PORT=3000
+ENV NODE_ENV=production
 EXPOSE 3000
 
 # Start the Express server

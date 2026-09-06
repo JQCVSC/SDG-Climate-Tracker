@@ -3189,7 +3189,7 @@ export default function App() {
                 <div className="flex items-center justify-between pb-2 border-b border-stone-800 text-stone-400">
                   <span>Terminal (Run in /climate_pledge_app/ directory)</span>
                   <button
-                    onClick={() => handleCopy('gcloud run deploy climate-pledge-tracker --source . --region us-central1 --allow-unauthenticated --set-env-vars AIR_QUALITY_API_KEY=YOUR_KEY,GOOGLE_MAPS_API_KEY=AIzaSyAim-mNEJnz1YP0PS4MeQ62QZFTCCGGQRY', 'cmd-deploy')}
+                    onClick={() => handleCopy('gcloud run deploy climate-pledge-tracker --project=sdg13-climate-tracker --source . --region us-central1 --allow-unauthenticated --set-env-vars GOOGLE_CLOUD_PROJECT=sdg13-climate-tracker,AIR_QUALITY_API_KEY=YOUR_KEY,GOOGLE_MAPS_API_KEY=AIzaSyAim-mNEJnz1YP0PS4MeQ62QZFTCCGGQRY', 'cmd-deploy')}
                     className="px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-[11px] font-sans font-medium transition cursor-pointer"
                   >
                     {copiedKey === 'cmd-deploy' ? 'Copied!' : 'Copy Command'}
@@ -3197,10 +3197,11 @@ export default function App() {
                 </div>
                 <div className="text-emerald-400 overflow-x-auto py-1">
                   gcloud run deploy climate-pledge-tracker \<br />
+                  &nbsp;&nbsp;--project=sdg13-climate-tracker \<br />
                   &nbsp;&nbsp;--source . \<br />
                   &nbsp;&nbsp;--region us-central1 \<br />
                   &nbsp;&nbsp;--allow-unauthenticated \<br />
-                  &nbsp;&nbsp;--set-env-vars AIR_QUALITY_API_KEY="YOUR_KEY",GOOGLE_MAPS_API_KEY="AIzaSyAim-mNEJnz1YP0PS4MeQ62QZFTCCGGQRY"
+                  &nbsp;&nbsp;--set-env-vars GOOGLE_CLOUD_PROJECT="sdg13-climate-tracker",AIR_QUALITY_API_KEY="YOUR_KEY",GOOGLE_MAPS_API_KEY="AIzaSyAim-mNEJnz1YP0PS4MeQ62QZFTCCGGQRY"
                 </div>
               </div>
             </div>
